@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>4月小程序登录突增 — 侧面因素分析</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#e0e0e0;padding:24px}
+  .container{max-width:1100px;margin:0 auto}
+  h1{font-size:24px;color:#fff;margin-bottom:4px}
+  h2{font-size:18px;color:#fff;margin:32px 0 12px;border-bottom:1px solid #2a2d3a;padding-bottom:8px}
+  .subtitle{color:#888;font-size:13px;margin-bottom:20px}
+  .kpi-row{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+  .kpi-card{flex:1;min-width:160px;background:#1a1d2b;border-radius:8px;padding:16px;border-left:3px solid}
+  .kpi-card.fire{border-color:#ff4757}
+  .kpi-card.warn{border-color:#ffa502}
+  .kpi-card.ok{border-color:#2ed573}
+  .kpi-card.info{border-color:#1e90ff}
+  .kpi-label{font-size:12px;color:#888;margin-bottom:4px}
+  .kpi-val{font-size:28px;font-weight:700;color:#fff}
+  .kpi-delta{font-size:12px;margin-top:2px}
+  .kpi-delta.up{color:#ff4757}
+  .kpi-delta.down{color:#2ed573}
+  .kpi-delta.flat{color:#888}
+  .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+  .chart-box{background:#1a1d2b;border-radius:8px;padding:16px}
+  .chart-box.full{grid-column:1/-1}
+  .chart-title{font-size:14px;color:#bbb;margin-bottom:8px;font-weight:600}
+  .chart-wrap{position:relative;height:280px}
+  .chart-wrap.tall{height:340px}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+  th{background:#232737;padding:8px 12px;text-align:left;color:#aaa;font-weight:500}
+  td{padding:8px 12px;border-bottom:1px solid #232737}
+  tr:hover td{background:#1e2132}
+  .highlight{color:#ff4757;font-weight:700}
+  .conclusion{background:#1a1d2b;border-radius:8px;padding:20px;margin:20px 0;border-left:3px solid #ff4757}
+  .conclusion h3{color:#ff4757;margin-bottom:8px;font-size:15px}
+  .conclusion ul{margin-left:16px;line-height:1.8}
+  .flat-note{font-size:11px;color:#666;margin-top:4px}
+  .chain-box{background:#1a1d2b;border-radius:8px;padding:20px;margin:16px 0}
+  .chain{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .chain-node{background:#232737;border-radius:6px;padding:10px 14px;font-size:12px;text-align:center;min-width:100px}
+  .chain-node.hot{background:#3d1f2a;border:1px solid #ff4757}
+  .chain-arrow{color:#888;font-size:18px}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📊 4月小程序登录用户突增——侧面因素分析（修订版）</h1>
+<div class="subtitle">数据来源：ai.ai_member_info / ai_shop_award_d / ai_shop_scan / ai_kpi · 2026年1-4月 · 报告时间：2026-04-27</div>
+
+<!-- KPI Cards -->
+<div class="kpi-row">
+  <div class="kpi-card fire">
+    <div class="kpi-label">4月中奖次数</div>
+    <div class="kpi-val">80,363</div>
+    <div class="kpi-delta up">↑ 290% vs 3月</div>
+  </div>
+  <div class="kpi-card fire">
+    <div class="kpi-label">3月31日新增会员</div>
+    <div class="kpi-val">2,104</div>
+    <div class="kpi-delta up">日均的 14.3倍</div>
+  </div>
+  <div class="kpi-card warn">
+    <div class="kpi-label">4月参与活动门店</div>
+    <div class="kpi-val">634</div>
+    <div class="kpi-delta up">↑ 29% vs 3月</div>
+  </div>
+  <div class="kpi-card ok">
+    <div class="kpi-label">4月扫码箱数</div>
+    <div class="kpi-val">110,129</div>
+    <div class="kpi-delta down">↓ 11% vs 3月</div>
+  </div>
+  <div class="kpi-card info">
+    <div class="kpi-label">4月新增会员</div>
+    <div class="kpi-val">6,632</div>
+    <div class="kpi-delta flat">→ 持平高位</div>
+  </div>
+</div>
+
+<!-- Core Conclusion -->
+<div class="conclusion">
+  <h3>🔴 核心结论（修订）</h3>
+  <ul>
+    <li><strong>3月31日单日新增2,104会员</strong>（日均147的14.3倍），是3月整体增长+80%的最大贡献日</li>
+    <li><strong>4月15日单日中奖8,872次</strong>，W16-W17两周密集爆发，活动引爆时间窗口精准</li>
+    <li>小程序登录突增 = <strong>3月底会员放量蓄水 + 4月中旬活动密集引爆</strong> 的接力效应</li>
+    <li>开箱扫码量在4月稳中有降（↓11%），说明增量登录来自「已有扫码行为用户被活动驱动回访」，而非新开箱</li>
+  </ul>
+</div>
+
+<!-- Chart 1: 会员月度新增 -->
+<h2>一、会员新增趋势</h2>
+<div class="chart-row">
+  <div class="chart-box">
+    <div class="chart-title">📈 2026年1-4月 月度新增会员</div>
+    <div class="chart-wrap"><canvas id="chartMonthlyMembers"></canvas></div>
+  </div>
+  <div class="chart-box">
+    <div class="chart-title">📋 关键数字</div>
+    <table>
+      <tr><th>月份</th><th>新增会员</th><th>环比</th><th>趋势</th></tr>
+      <tr><td>1月</td><td>3,784</td><td>—</td><td>🟢 正常</td></tr>
+      <tr><td>2月</td><td>3,590</td><td>-5.1%</td><td>🟡 春节</td></tr>
+      <tr><td>3月</td><td class="highlight">6,459</td><td class="highlight">+79.9%</td><td>🔴 突增</td></tr>
+      <tr><td>4月</td><td class="highlight">6,632</td><td>+2.7%</td><td>🔴 高位</td></tr>
+    </table>
+    <div class="flat-note">※ 会员渠道(source)字段无实际业务意义，不纳入分析（汉老师纠正）</div>
+  </div>
+</div>
+
+<!-- Chart 2: 3月每日新增 -->
+<div class="chart-row">
+  <div class="chart-box full">
+    <div class="chart-title">🔍 3月每日新增会员 — 3月31日单日爆发确认！</div>
+    <div class="chart-wrap tall"><canvas id="chartMarchDaily"></canvas></div>
+  </div>
+</div>
+
+<!-- Chart 3: 4月每日新增 -->
+<div class="chart-row">
+  <div class="chart-box full">
+    <div class="chart-title">🔍 4月每日新增会员 — 4月9日存在二次小高峰</div>
+    <div class="chart-wrap tall"><canvas id="chartAprilDaily"></canvas></div>
+  </div>
+</div>
+
+<!-- Chart 4: 活动中奖月度趋势 -->
+<h2>二、营销活动中奖趋势</h2>
+<div class="chart-row">
+  <div class="chart-box">
+    <div class="chart-title">🏆 月度中奖总次数</div>
+    <div class="chart-wrap"><canvas id="chartMonthlyAwards"></canvas></div>
+  </div>
+  <div class="chart-box">
+    <div class="chart-title">💰 月度奖金总额</div>
+    <div class="chart-wrap"><canvas id="chartMonthlyPrize"></canvas></div>
+  </div>
+</div>
+
+<!-- Chart 5: 每日中奖趋势 3月 vs 4月 -->
+<div class="chart-row">
+  <div class="chart-box full">
+    <div class="chart-title">📊 3-4月每日中奖次数对比 — 4月活动密度碾压3月</div>
+    <div class="chart-wrap tall"><canvas id="chartDailyAwards"></canvas></div>
+  </div>
+</div>
+
+<!-- Chart 6: 活动参与门店数 -->
+<div class="chart-row">
+  <div class="chart-box full">
+    <div class="chart-title">🏪 每日参与活动门店数（3月 vs 4月）</div>
+    <div class="chart-wrap tall"><canvas id="chartDailyShops"></canvas></div>
+  </div>
+</div>
+
+<!-- Chart 7: 开箱扫码对照 -->
+<h2>三、开箱扫码（对照指标）</h2>
+<div class="chart-row">
+  <div class="chart-box">
+    <div class="chart-title">📦 月度扫码箱数 — 与活动中奖走势背离</div>
+    <div class="chart-wrap"><canvas id="chartScan"></canvas></div>
+  </div>
+  <div class="chart-box">
+    <div class="chart-title">📋 对照表</div>
+    <table class="compact">
+      <tr><th>月份</th><th>扫码门店</th><th>扫码箱数</th><th>vs 中奖</th></tr>
+      <tr><td>1月</td><td>933</td><td>129,565</td><td style="color:#2ed573">扫码>中奖</td></tr>
+      <tr><td>2月</td><td>692</td><td>85,180</td><td>春节双低</td></tr>
+      <tr><td>3月</td><td>923</td><td>124,217</td><td>扫码>>中奖</td></tr>
+      <tr><td>4月</td><td>943</td><td class="highlight">110,129</td><td style="color:#ff4757">中奖>>扫码</td></tr>
+    </table>
+    <div class="flat-note" style="margin-top:12px">※ 4月扫码箱数比3月下降11.3%，但中奖暴增290%<br>→ 证明：登录增量来自活动驱动回访，而非新开箱</div>
+  </div>
+</div>
+
+<!-- Causal Chain -->
+<h2>四、因果链推断</h2>
+<div class="chain-box">
+  <div class="chain">
+    <div class="chain-node hot">3/31 会员放量<br>单日新增2,104人</div>
+    <div class="chain-arrow">→</div>
+    <div class="chain-node">3月整体<br>新增+80%</div>
+    <div class="chain-arrow">→</div>
+    <div class="chain-node hot">4/14-4/25<br>活动集中引爆<br>中奖7.7万次</div>
+    <div class="chain-arrow">→</div>
+    <div class="chain-node hot">小程序登录<br>用户突增</div>
+  </div>
+  <div style="margin-top:16px;font-size:12px;color:#888">
+    ⚡ 时间线：3月底蓄水 → 4月初活动启动 → 4月中旬W16-W17引爆 → 登录高峰<br>
+    ⚠️ 注意：此链条基于BI数据做的关联推断，非因果确证，需小程序后台日活数据交叉验证
+  </div>
+</div>
+
+<!-- Final Notes -->
+<h2>五、下一步验证建议</h2>
+<table>
+  <tr><th>验证方向</th><th>方法</th><th>可行性</th></tr>
+  <tr><td>小程序日活曲线</td><td>调取后台DAU，对比4/14-4/25中奖日</td><td>⚠️ 需产品/运营配合</td></tr>
+  <tr><td>3/31注册来源</td><td>排查当日是否有线下推广/渠道活动</td><td>✅ 业务可追溯</td></tr>
+  <tr><td>4月活动ROI</td><td>奖金¥398,059 vs 新增会员价值</td><td>✅ 可测算</td></tr>
+  <tr><td>兑奖→登录转化</td><td>中奖后几天内登录小程序的用户占比</td><td>⚠️ 需跨系统数据</td></tr>
+</table>
+
+<div class="flat-note" style="margin-top:20px">
+  数据溯源：ai.ai_member_info (会员注册) · ai.ai_shop_award_d (中奖明细) · ai.ai_shop_scan (开箱扫码) · ai.ai_kpi (KPI快照)<br>
+  ⚠️ 数据局限性：不包含小程序后台实际登录数据，结论为侧面关联推断
+</div>
+
+</div>
+
+<script>
+// ── Chart 1: 月度新增会员 ──
+new Chart(document.getElementById('chartMonthlyMembers'), {
+  type: 'bar',
+  data: {
+    labels: ['1月','2月','3月','4月'],
+    datasets: [{
+      label: '新增会员',
+      data: [3784, 3590, 6459, 6632],
+      backgroundColor: ['rgba(46,213,115,0.4)','rgba(255,165,2,0.4)','rgba(255,71,87,0.6)','rgba(255,71,87,0.7)'],
+      borderColor: ['#2ed573','#ffa502','#ff4757','#ff4757'],
+      borderWidth: 1
+    },{
+      label: '3月31日单日贡献',
+      data: [0, 0, 2104, 0],
+      backgroundColor: 'rgba(255,234,167,0.9)',
+      borderColor: '#ffd32a',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color:'#aaa', font:{size:11} } } },
+    scales: {
+      x: { ticks: { color:'#aaa' }, grid: { color:'#2a2d3a' } },
+      y: { ticks: { color:'#aaa' }, grid: { color:'#2a2d3a' }, title:{display:true,text:'人',color:'#aaa'} }
+    }
+  }
+});
+
+// ── Chart 2: 3月每日新增会员 ──
+(function(){
+  const days = Array.from({length:31},(_,i)=>`3/${i+1}`);
+  const vals = [97,107,95,109,98,111,112,128,88,75,74,98,173,198,179,142,140,126,139,222,275,254,165,170,189,148,165,175,158,145,2104];
+  const avg = vals.slice(0,30).reduce((a,b)=>a+b,0)/30;
+  new Chart(document.getElementById('chartMarchDaily'), {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{ label:'日新增会员', data:vals, borderColor:'#ff4757', backgroundColor:'rgba(255,71,87,0.1)', fill:true, tension:0.3, pointRadius: vals.map(v=>v>2000?8:1), pointBackgroundColor:vals.map(v=>v>2000?'#ffd32a':'#ff4757') },
+      { label:'日均线(147)', data:Array(31).fill(avg), borderColor:'rgba(170,170,170,0.3)', borderDash:[6,4], pointRadius:0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { 
+        legend: { labels: { color:'#aaa', font:{size:11} } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y} 人` } }
+      },
+      scales: {
+        x: { ticks: { color:'#aaa', maxTicksLimit:15 }, grid: { color:'#2a2d3a' } },
+        y: { ticks: { color:'#aaa' }, grid: { color:'#2a2d3a' }, title:{display:true,text:'人',color:'#aaa'}, min:0 }
+      }
+    }
+  });
+})();
+
+// ── Chart 3: 4月每日新增会员 ──
+(function(){
+  const days = Array.from({length:27},(_,i)=>`4/${i+1}`);
+  const vals = [300,124,122,144,158,127,125,148,799,401,364,322,220,236,261,267,282,268,245,158,216,244,278,246,304,182,91];
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  new Chart(document.getElementById('chartAprilDaily'), {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{ label:'日新增会员', data:vals, borderColor:'#1e90ff', backgroundColor:'rgba(30,144,255,0.1)', fill:true, tension:0.3, pointRadius: vals.map(v=>v>500?6:2), pointBackgroundColor:vals.map(v=>v>500?'#ffd32a':'#1e90ff') },
+      { label:'日均线(246)', data:Array(27).fill(avg), borderColor:'rgba(170,170,170,0.3)', borderDash:[6,4], pointRadius:0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#aaa', font:{size:11} } } },
+      scales: {
+        x: { ticks: { color:'#aaa', maxTicksLimit:14 }, grid: { color:'#2a2d3a' } },
+        y: { ticks: { color:'#aaa' }, grid: { color:'#2a2d3a' }, title:{display:true,text:'人',color:'#aaa'}, min:0 }
+      }
+    }
+  });
+})();
+
+// ── Chart 4: 月度中奖次数 ──
+new Chart(document.getElementById('chartMonthlyAwards'), {
+  type: 'bar',
+  data: {
+    labels: ['1月','2月','3月','4月'],
+    datasets: [{
+      label: '中奖次数',
+      data: [15067, 8792, 20588, 80363],
+      backgroundColor: ['rgba(46,213,115,0.3)','rgba(255,165,2,0.3)','rgba(255,165,2,0.5)','rgba(255,71,87,0.7)'],
+      borderColor: ['#2ed573','#ffa502','#ffa502','#ff4757'],
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{display:false} },
+    scales: {
+      x: { ticks: { color:'#aaa' }, grid: { color:'#2a2d3a' } },
+      y: { ticks: { color:'#aaa' }, grid: { color:'#2a2d3a' }, title:{display:true,text:'次',color:'#aaa'} }
+    }
+  }
+});
+
+// ── Chart 5: 月度奖金总额 ──
+new Chart(document.getElementById('chartMonthlyPrize'), {
+  type: 'bar',
+  data: {
+    labels: ['1月','2月','3月','4月'],
+    datasets: [{
+      label: '奖金总额(元)',
+      data: [126471, 86701, 229036, 398059],
+      backgroundColor: ['rgba(46,213,115,0.3)','rgba(255,165,2,0.3)','rgba(255,165,2,0.5)','rgba(255,71,87,0.7)'],
+      borderColor: ['#2ed573','#ffa502','#ffa502','#ff4757'],
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{display:false} },
+    scales: {
+      x: { ticks: { color:'#aaa' }, grid: { color:'#2a2d3a' } },
+      y: { ticks: { color:'#aaa', callback:v=>'¥'+(v/10000).toFixed(1)+'万' }, grid: { color:'#2a2d3a' } }
+    }
+  }
+});
+
+// ── Chart 6: 3-4月每日中奖次数 ──
+(function(){
+  const marAwards = [0,0,0,3,3,3,3,1,36,169,43,110,648,1326,1082,712,512,869,1016,1079,2063,1207,940,740,600,1371,920,1296,1294,1316,1226];
+  const aprAwards = [864,409,579,925,1016,745,635,1062,1258,2395,4222,2688,2636,4546,8872,5461,3792,4078,3590,2189,2355,3820,5885,6760,4941,3174,1466];
+  const labels = [];
+  const marData = [], aprData = [];
+  for(let i=0;i<31;i++){ labels.push('3/'+(i+1)); marData.push(marAwards[i]); aprData.push(null); }
+  for(let i=0;i<27;i++){ labels.push('4/'+(i+1)); marData.push(null); aprData.push(aprAwards[i]); }
+
+  new Chart(document.getElementById('chartDailyAwards'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'3月中奖', data:marData, borderColor:'rgba(255,165,2,0.7)', backgroundColor:'rgba(255,165,2,0.05)', fill:true, tension:0.3, pointRadius:0 },
+        { label:'4月中奖', data:aprData, borderColor:'#ff4757', backgroundColor:'rgba(255,71,87,0.1)', fill:true, tension:0.3, pointRadius:0 },
+        { label:'4月W16引爆(4/14-19)', data:labels.map((l,i)=>l>='4/14'&&l<='4/19'?aprData[i]:null), borderColor:'#ffd32a', borderWidth:2, backgroundColor:'transparent', pointRadius:3, pointBackgroundColor:'#ffd32a' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#aaa', font:{size:11} } } },
+      scales: {
+        x: { ticks: { color:'#aaa', maxTicksLimit:20 }, grid: { color:'#2a2d3a' } },
+        y: { ticks: { color:'#aaa' }, grid: { color:'#2a2d3a' } }
+      }
+    }
+  });
+})();
+
+// ── Chart 7: 每日参与活动门店数 ──
+(function(){
+  const marShops = [74,79,75,74,71,70,71,80,68,73,72,88,106,110,110,108,100,101,109,119,138,141,123,118,115,120,128,142,132,121,136];
+  const aprShops = [122,117,114,106,118,108,118,122,110,135,151,167,155,160,187,192,182,193,181,165,165,179,198,191,207,194,148];
+  const labels = [];
+  const mData=[], aData=[];
+  for(let i=0;i<31;i++){ labels.push('3/'+(i+1)); mData.push(marShops[i]); aData.push(null); }
+  for(let i=0;i<27;i++){ labels.push('4/'+(i+1)); mData.push(null); aData.push(aprShops[i]); }
+
+  new Chart(document.getElementById('chartDailyShops'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'3月活动门店', data:mData, borderColor:'rgba(255,165,2,0.7)', backgroundColor:'transparent', tension:0.3, pointRadius:0, borderWidth:1.5 },
+        { label:'4月活动门店', data:aData, borderColor:'#1e90ff', backgroundColor:'transparent', tension:0.3, pointRadius:0, borderWidth:2 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#aaa', font:{size:11} } } },
+      scales: {
+        x: { ticks: { color:'#aaa', maxTicksLimit:20 }, grid: { color:'#2a2d3a' } },
+        y: { ticks: { color:'#aaa' }, grid: { color:'#2a2d3a' }, min:0, title:{display:true,text:'门店数',color:'#aaa'} }
+      }
+    }
+  });
+})();
+
+// ── Chart 8: 月度扫码箱数 ──
+new Chart(document.getElementById('chartScan'), {
+  type: 'bar',
+  data: {
+    labels: ['1月','2月','3月','4月'],
+    datasets: [{
+      label: '扫码箱数',
+      data: [129565, 85180, 124217, 110129],
+      backgroundColor: ['rgba(30,144,255,0.3)','rgba(30,144,255,0.2)','rgba(30,144,255,0.35)','rgba(255,71,87,0.5)'],
+      borderColor: ['#1e90ff','#1e90ff','#1e90ff','#ff4757'],
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend:{display:false} },
+    scales: {
+      x: { ticks: { color:'#aaa' }, grid: { color:'#2a2d3a' } },
+      y: { ticks: { color:'#aaa', callback:v=>(v/10000).toFixed(1)+'万' }, grid: { color:'#2a2d3a' } }
+    }
+  }
+});
+</script>
+</body>
+</html>
