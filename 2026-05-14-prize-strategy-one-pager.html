@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奖品策略优化·一页纸决策备忘 | 仙津 BI</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--b:#30363d;--t:#c9d1d9;--m:#8b949e;--g:#3fb950;--r:#f85149;--y:#d29922;--a:#58a6ff;--p:#bc8cff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t);line-height:1.6;padding:32px 20px}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-size:26px;margin-bottom:4px}
+.sub{color:var(--m);font-size:13px;margin-bottom:28px}
+h2{font-size:18px;margin:28px 0 14px;padding-bottom:6px;border-bottom:1px solid var(--b)}
+h3{font-size:15px;margin:0 0 4px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.row{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--b);border-radius:8px;padding:18px}
+.card.good{border-left:3px solid var(--g)}
+.card.bad{border-left:3px solid var(--r)}
+.card.warn{border-left:3px solid var(--y)}
+.card.noise{border-left:3px solid var(--p);background:rgba(188,140,255,0.04)}
+.store-name{font-size:14px;font-weight:700;margin-bottom:8px}
+.store-name .city{color:var(--m);font-weight:400;font-size:12px}
+.metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0}
+.metric{text-align:center}
+.metric .val{font-size:22px;font-weight:700}
+.metric .lbl{font-size:10px;color:var(--m);text-transform:uppercase}
+.metric .val.g{color:var(--g)}
+.metric .val.r{color:var(--r)}
+.metric .val.y{color:var(--y)}
+.verdict{font-size:13px;padding:8px 10px;border-radius:6px;margin-top:8px}
+.verdict.good-v{background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.2)}
+.verdict.bad-v{background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.2)}
+.verdict.noise-v{background:rgba(188,140,255,0.06);border:1px solid rgba(188,140,255,0.15)}
+.big-num{font-size:48px;font-weight:800;line-height:1}
+.gap-bar{display:flex;align-items:center;gap:8px;margin:8px 0}
+.gap-bar .bar-label{font-size:11px;color:var(--m);white-space:nowrap}
+.gap-bar .bar-track{flex:1;height:6px;background:var(--b);border-radius:3px;overflow:hidden}
+.gap-bar .bar-fill{height:100%;border-radius:3px}
+.step{background:var(--card);border:1px solid var(--b);border-radius:8px;padding:18px;margin-bottom:12px}
+.step .num{display:inline-block;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;margin-right:8px}
+.step .num.n1{background:var(--r);color:#fff}
+.step .num.n2{background:var(--y);color:#000}
+.step .num.n3{background:var(--a);color:#fff}
+.step h3{display:inline}
+.step p{color:var(--m);font-size:13px;margin-top:6px}
+.step .action{font-size:13px;margin-top:8px;padding:6px 10px;background:rgba(88,166,255,0.08);border-radius:4px}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+th{text-align:left;padding:8px 10px;color:var(--m);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--b)}
+td{padding:8px 10px;border-bottom:1px solid rgba(48,54,61,0.5)}
+.tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600}
+.tag-g{background:rgba(63,185,80,0.15);color:var(--g)}
+.tag-r{background:rgba(248,81,73,0.15);color:var(--r)}
+.tag-y{background:rgba(210,153,34,0.15);color:var(--y)}
+.tag-p{background:rgba(188,140,255,0.15);color:var(--p)}
+.foot{color:var(--m);font-size:11px;margin-top:24px;padding-top:16px;border-top:1px solid var(--b)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>🎯 奖品投放：好店为什么好，差店为什么差</h1>
+<div class="sub">一页纸决策备忘 · 数据来源 ai_customer_activity_powerstation · 2026.02.14–05.14 · 排除兜底积分</div>
+
+<!-- ============ PART 1: GOOD vs BAD ============ -->
+<h2>一、好店 vs 差店 — 4组案例对比</h2>
+
+<div class="row">
+  <!-- Good 1 -->
+  <div class="card good">
+    <div class="store-name">🏆 成都 THE BUTTERFLY <span class="city">锦江区</span></div>
+    <div class="metrics">
+      <div class="metric"><div class="val g">¥0.92</div><div class="lbl">每扫码成本</div></div>
+      <div class="metric"><div class="val">76.7%</div><div class="lbl">中奖率</div></div>
+      <div class="metric"><div class="val">¥1.21</div><div class="lbl">每奖面值</div></div>
+    </div>
+    <div class="verdict good-v">✅ 近5千次扫码，消费者分散，真实自然流量。策略：高奖率 + ¥1红包全覆盖，成本极低。</div>
+  </div>
+
+  <!-- Bad 1 -->
+  <div class="card bad">
+    <div class="store-name">🔴 麦颂KTV <span class="city">石家庄裕华万达</span></div>
+    <div class="metrics">
+      <div class="metric"><div class="val r">¥102.78</div><div class="lbl">每扫码成本</div></div>
+      <div class="metric"><div class="val">38.9%</div><div class="lbl">中奖率</div></div>
+      <div class="metric"><div class="val">¥264.29</div><div class="lbl">每奖面值</div></div>
+    </div>
+    <div class="verdict bad-v">❌ 每次扫码烧掉¥103，是BUTTERFLY的<strong>112倍</strong>。奖品面值¥264/award，远超合理区间。</div>
+  </div>
+
+  <!-- Good 2 -->
+  <div class="card good">
+    <div class="store-name">🏆 东莞至尊酒吧 <span class="city">高埗镇</span></div>
+    <div class="metrics">
+      <div class="metric"><div class="val g">¥0.90</div><div class="lbl">每扫码成本</div></div>
+      <div class="metric"><div class="val">89.9%</div><div class="lbl">中奖率</div></div>
+      <div class="metric"><div class="val">¥1.00</div><div class="lbl">每奖面值</div></div>
+    </div>
+    <div class="verdict good-v">✅ 90%扫码必得¥1，消费者感知"扫码就有钱"，驱动持续扫码。791次扫码总成本仅¥711。</div>
+  </div>
+
+  <!-- Bad 2 -->
+  <div class="card bad">
+    <div class="store-name">🔴 北京 O club <span class="city">朝阳区</span></div>
+    <div class="metrics">
+      <div class="metric"><div class="val r">¥71.48</div><div class="lbl">每扫码成本</div></div>
+      <div class="metric"><div class="val">100%</div><div class="lbl">中奖率</div></div>
+      <div class="metric"><div class="val">¥71.48</div><div class="lbl">每奖面值</div></div>
+    </div>
+    <div class="verdict bad-v">❌ 100%中奖看似完美，但每人发¥71——96次扫码烧掉¥6,862。面值是根因，非中奖率。</div>
+  </div>
+</div>
+
+<div class="row" style="margin-top:16px">
+  <!-- Good 3 -->
+  <div class="card good">
+    <div class="store-name">🏆 新乡红馆KTV <span class="city">辉县</span></div>
+    <div class="metrics">
+      <div class="metric"><div class="val g">¥0.91</div><div class="lbl">每扫码成本</div></div>
+      <div class="metric"><div class="val">58.9%</div><div class="lbl">中奖率</div></div>
+      <div class="metric"><div class="val">¥1.55</div><div class="lbl">每奖面值</div></div>
+    </div>
+    <div class="verdict good-v">✅ 1,222次扫码，总成本仅¥1,116。六成中奖、小额为主，平衡体验与成本。</div>
+  </div>
+
+  <!-- Bad 3 -->
+  <div class="card bad">
+    <div class="store-name">🔴 北京酒吧群 <span class="city">液店/Fm调频/木星/K先生</span></div>
+    <div class="metrics">
+      <div class="metric"><div class="val r">¥60.75</div><div class="lbl">每扫码成本</div></div>
+      <div class="metric"><div class="val">100%</div><div class="lbl">中奖率</div></div>
+      <div class="metric"><div class="val">¥60.75</div><div class="lbl">每奖面值</div></div>
+    </div>
+    <div class="verdict bad-v">❌ 4家北京酒吧完全相同配置——系统性问题，非个案。合480次扫码烧¥29,160。</div>
+  </div>
+
+  <!-- Good 4 -->
+  <div class="card good">
+    <div class="store-name">🏆 天水 T58 Party <span class="city">麦积区</span></div>
+    <div class="metrics">
+      <div class="metric"><div class="val g">¥0.99</div><div class="lbl">每扫码成本</div></div>
+      <div class="metric"><div class="val">99.5%</div><div class="lbl">中奖率</div></div>
+      <div class="metric"><div class="val">¥1.00</div><div class="lbl">每奖面值</div></div>
+    </div>
+    <div class="verdict good-v">✅ 近乎100%中奖 + ¥1面值 = "扫码必得"体验 + 成本可控。372次扫码成本¥370。</div>
+  </div>
+
+  <!-- Bad 4 -->
+  <div class="card bad">
+    <div class="store-name">🔴 青灯酒吧 <span class="city">乌鲁木齐新市区</span></div>
+    <div class="metrics">
+      <div class="metric"><div class="val r">¥39.57</div><div class="lbl">每扫码成本</div></div>
+      <div class="metric"><div class="val">11.0%</div><div class="lbl">中奖率</div></div>
+      <div class="metric"><div class="val">¥358.70</div><div class="lbl">每奖面值</div></div>
+    </div>
+    <div class="verdict bad-v">❌ 低中奖率 + 超大奖（华为平板/手机）→ 极少数人中巨奖，成本完全失控。</div>
+  </div>
+</div>
+
+<!-- ============ THE GAP ============ -->
+<div class="card" style="margin-top:16px;text-align:center">
+  <h3>差距一目了然</h3>
+  <div class="gap-bar"><span class="bar-label">好店均值</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--g)"></div></div><span style="font-weight:700;color:var(--g)">¥0.93</span></div>
+  <div class="gap-bar"><span class="bar-label">差店均值</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--r)"></div></div><span style="font-weight:700;color:var(--r)">¥68.62</span></div>
+  <p style="color:var(--m);font-size:13px;margin-top:8px">差距 <span style="color:var(--r);font-weight:700">74倍</span>，根因不是中奖率（差店甚至更高），而是<strong>奖品面值</strong>（¥1 vs ¥71-264 = 71-264倍）</p>
+</div>
+
+<!-- ============ PART 2: NOISE WARNING ============ -->
+<h2>二、⚠️ 噪音警告 — 这些不是标杆，是刷码</h2>
+<div class="card noise">
+  <p style="font-size:14px;margin-bottom:12px">以下门店表面"效率极高"（cost_per_scan &lt; ¥0.10），但扫码集中在1-2人身上——<strong>疑似员工刷码薅羊毛，不可作为标杆参考</strong>。</p>
+  <table>
+    <thead><tr><th>门店</th><th>扫码量</th><th>Top1用户</th><th>Top3占比</th><th>判定</th></tr></thead>
+    <tbody>
+      <tr><td>乐尚国际（资阳）</td><td>~12,000</td><td>5,374</td><td><strong>88%</strong></td><td><span class="tag tag-r">极端集中</span></td></tr>
+      <tr><td>么哈MOJAR（重庆）</td><td>37,430</td><td>7,553</td><td><strong>56%</strong></td><td><span class="tag tag-r">重度集中</span></td></tr>
+      <tr><td>OPUS天空之城（重庆）</td><td>~23,000</td><td>4,152</td><td><strong>52%</strong></td><td><span class="tag tag-r">重度集中</span></td></tr>
+      <tr><td>派缇酒吧（东莞）</td><td>~15,000</td><td>2,215</td><td><strong>43%</strong></td><td><span class="tag tag-y">中度偏重</span></td></tr>
+      <tr><td>A+HOUSE（重庆）</td><td>26,391</td><td>4,122</td><td><strong>40%</strong></td><td><span class="tag tag-y">中度集中</span></td></tr>
+      <tr><td>Party2大朗（东莞）</td><td>16,257</td><td>2,287</td><td><strong>35%</strong></td><td><span class="tag tag-y">中度集中</span></td></tr>
+    </tbody>
+  </table>
+  <p style="color:var(--m);font-size:12px;margin-top:8px">排除后全局 cost_per_scan 从 ¥3.70 → ¥4.19，真实成本高 13%。建议对 Top3 占比 > 35% 的门店启动风控审查。</p>
+</div>
+
+<!-- ============ PART 3: ACTION PLAN ============ -->
+<h2>三、下一步落地动作</h2>
+
+<div class="step">
+  <span class="num n1">1</span><h3>立即冻结面值失控门店 — 本周完成</h3>
+  <p>涉及：北京4家酒吧群（¥60.75/scan）、麦颂KTV 2家（¥102/scan）、青灯酒吧（¥39.57/scan）、巴黎印象（¥91/scan）等。</p>
+  <div class="action">
+    <strong>动作：</strong>将以上门店奖品池从 T4-T5（¥50+）下调至 T1-T2（¥1-8），暂停手机/平板/大额红包投放。<br>
+    <strong>预期效果：</strong>成本从 ¥40-102/scan → ¥3-5/scan，效率提升 10-20 倍。
+  </div>
+</div>
+
+<div class="step">
+  <span class="num n2">2</span><h3>事业二部奖品结构专项优化 — 本周启动</h3>
+  <p>二部每奖面值 ¥10.50 = 一部 ¥4.21 的 <strong>2.5倍</strong>。256家门店扫码量仅一部190家的67%，却烧掉更多预算。</p>
+  <div class="action">
+    <strong>动作：</strong>排查二部是否有独立的高面值奖品池配置；统一设置 T1-T3 预算上限（T1 ≥ 70%, T2 ≤ 20%, T3 ≤ 8%）。<br>
+    <strong>预期效果：</strong>二部 cost_per_scan 从 ¥5.91 → ¥2.5-3.5，接近一部水平。
+  </div>
+</div>
+
+<div class="step">
+  <span class="num n3">3</span><h3>推广"高奖率×小额"标准模板 — 本月试点</h3>
+  <p>已有 4 家门店验证可行（BUTTERFLY / 至尊 / 红馆 / T58），cost_per_scan ≤ ¥1.00。</p>
+  <div class="action">
+    <strong>模板参数：</strong><br>
+    · 奖品池：¥1、¥1.8、¥1.88、¥2 红包各 25%<br>
+    · 中奖率目标：60-80%<br>
+    · 预期成本：¥1.0-1.5 / 次扫码<br>
+    <strong>试点建议：</strong>选 10 家二部差店，切换到该模板，观察 1 个月后扫码量变化。
+  </div>
+</div>
+
+<div class="step" style="border-left:3px solid var(--p)">
+  <span class="num n3" style="background:var(--p)">+</span><h3>建立刷码风控 — 月度巡检</h3>
+  <p>每月拉取所有门店 Top3 消费者集中度，>35% 自动标记为可疑，限流（单用户日扫码上限）+ 人工复核。</p>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<div class="foot">
+  📊 数据来源：ai_customer_activity_powerstation | 时间：2026.02.14 – 05.14 | 口径：SUM(actual_value) / SUM(scan_cnt)，排除"兜底积分抽奖活动" | 
+  <a href="https://han8774.github.io/xianjing-reports/2026-05-14-prize-efficiency-deep-dive-v2.html" style="color:var(--a)">详细版报告 →</a>
+</div>
+
+</div>
+</body>
+</html>
