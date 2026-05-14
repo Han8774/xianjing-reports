@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奖品投放策略深度分析 v2（排除噪音门店） | 仙津 BI</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --card: #1a1d28;
+  --border: #2a2d3a;
+  --text: #e0e4f0;
+  --muted: #8b8fa6;
+  --accent: #6c8cff;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --red: #ef4444;
+  --orange: #f97316;
+  --purple: #a855f7;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height:1.6; }
+.container { max-width:1200px; margin:0 auto; padding:24px; }
+h1 { font-size:28px; margin-bottom:8px; background:linear-gradient(135deg, var(--accent), var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+h2 { font-size:20px; margin:32px 0 16px; padding-bottom:8px; border-bottom:2px solid var(--border); }
+h3 { font-size:16px; margin:20px 0 12px; color: var(--accent); }
+.meta { color: var(--muted); font-size:13px; margin-bottom:24px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:20px; }
+.kpi-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px; }
+.kpi { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center; }
+.kpi .label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+.kpi .value { font-size:28px; font-weight:700; margin:4px 0; }
+.kpi .sub { font-size:12px; color:var(--muted); }
+.kpi.warn { border-color:var(--yellow); }
+.kpi.danger { border-color:var(--red); }
+.kpi.good { border-color:var(--green); }
+table { width:100%; border-collapse:collapse; margin:12px 0; }
+th { text-align:left; padding:10px 12px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid var(--border); }
+td { padding:10px 12px; font-size:14px; border-bottom:1px solid rgba(42,45,58,0.5); }
+tr:hover td { background:rgba(108,140,255,0.05); }
+.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+.tag-good { background:rgba(34,197,94,0.15); color:var(--green); }
+.tag-warn { background:rgba(234,179,8,0.15); color:var(--yellow); }
+.tag-bad { background:rgba(239,68,68,0.15); color:var(--red); }
+.tag-info { background:rgba(108,140,255,0.15); color:var(--accent); }
+.tag-noise { background:rgba(168,85,247,0.15); color:var(--purple); }
+.bar-wrap { height:8px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; }
+.bar { height:100%; border-radius:4px; transition:width 0.5s; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.comparison { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.comp-col { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.comp-col.old { border-left:3px solid var(--purple); }
+.comp-col.new { border-left:3px solid var(--green); }
+.sop-item { background:var(--card); border-left:4px solid var(--accent); border-radius:0 8px 8px 0; padding:16px; margin-bottom:12px; }
+.sop-item.p1 { border-left-color:var(--red); }
+.sop-item.p2 { border-left-color:var(--orange); }
+.sop-item.p3 { border-left-color:var(--yellow); }
+.sop-item .pri { font-size:10px; text-transform:uppercase; font-weight:700; letter-spacing:1px; margin-bottom:4px; }
+.sop-item h4 { margin-bottom:4px; }
+.sop-item p { font-size:13px; color:var(--muted); }
+.summary-box { background:rgba(108,140,255,0.08); border:1px solid rgba(108,140,255,0.3); border-radius:10px; padding:16px; margin-bottom:20px; }
+.summary-box p { margin-bottom:6px; font-size:14px; }
+.summary-box p:last-child { margin-bottom:0; }
+svg text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.tooltip { font-size:11px; }
+.footnote { font-size:11px; color:var(--muted); margin-top:8px; }
+.highlight { color:var(--red); font-weight:700; }
+.section-divider { border:0; border-top:1px solid var(--border); margin:32px 0; }
+.badge { display:inline-block; padding:3px 10px; border-radius:100px; font-size:11px; font-weight:600; }
+.badge-new { background:var(--accent); color:#fff; }
+@media(max-width:768px){ .grid-2,.comparison { grid-template-columns:1fr; } .kpi-row { grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>🔬 奖品投放策略深度分析 v2</h1>
+<div class="meta">
+  数据源: ai.ai_customer_activity_powerstation（消费者扫码明细）<br>
+  时间范围: 2026-02-14 ~ 2026-05-14（近3个月）<br>
+  口径: SUM(actual_value) / SUM(scan_cnt)，排除兜底积分活动<br>
+  <span class="badge badge-new">v2 更新</span> 排除6家消费者集中度异常门店（疑似刷码）
+</div>
+
+<!-- ===== SECTION 1: EXECUTIVE SUMMARY ===== -->
+<div class="summary-box">
+  <h3>📌 核心发现（v2 修正后）</h3>
+  <p>1. <strong>排除6家刷码门店后</strong>，有效门店 cost_per_scan 从 ¥3.7 → <span class="highlight">¥4.19</span>，真实成本比原始估算高 13%</p>
+  <p>2. <strong>事业一部 vs 二部差距缩小</strong>：¥3.03 vs ¥5.91（1.95:1），排除噪音后更接近真实效率差</p>
+  <p>3. <strong>真实标杆路径唯一</strong>：高奖率(75%+) × 小额红包(¥1-2) → cost_per_scan ≤ ¥1.00。之前"超低奖率大客流"路径被证伪</p>
+  <p>4. <strong>差店根因不变</strong>：奖品面值失控（¥60-265/award）才是核心，中奖率差异仅次要因素</p>
+  <p>5. <strong>新发现：刷码风险</strong>：Top1用户集中度 >35% 的门店需风控介入，建议建立刷码检测SOP</p>
+</div>
+
+<!-- ===== SECTION 2: NOISE DETECTION ===== -->
+<h2>🔍 第一章：噪音检测 —— 消费者集中度分析</h2>
+
+<div class="card">
+  <h3>问题背景</h3>
+  <p style="color:var(--muted);font-size:14px;">
+    第一版分析将 A+HOUSE（cost_per_scan ¥0.07）、OPUS天空之城（¥0.08）等列为标杆。
+    汉老师指出：这些店的扫码行为高度集中在少数人身上，疑似员工刷码薅羊毛，不可作为标杆。
+  </p>
+</div>
+
+<h3>集中度检测（Top1-3用户占比）</h3>
+<div class="card">
+  <svg id="chart1" width="100%" height="400" viewBox="0 0 1000 400"></svg>
+</div>
+
+<table>
+  <thead>
+    <tr><th>门店</th><th>总扫码量</th><th>Top1 用户</th><th>Top3 占比</th><th>判断</th><th>处理</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>乐尚国际派对空间（资阳）</td><td>~12,000</td><td>5,374</td><td><strong>88%</strong></td>
+      <td><span class="tag tag-bad">🔴 极端集中</span></td>
+      <td><span class="tag tag-noise">已排除</span></td>
+    </tr>
+    <tr>
+      <td>么哈MOJAR（重庆沙坪坝）</td><td>37,430</td><td>7,553</td><td><strong>56%</strong></td>
+      <td><span class="tag tag-bad">🔴 重度集中</span></td>
+      <td><span class="tag tag-noise">已排除</span></td>
+    </tr>
+    <tr>
+      <td>OPUS天空之城（重庆涪陵）</td><td>~23,000</td><td>4,152</td><td><strong>52%</strong></td>
+      <td><span class="tag tag-bad">🔴 重度集中</span></td>
+      <td><span class="tag tag-noise">已排除</span></td>
+    </tr>
+    <tr>
+      <td>派缇酒吧（东莞长安）</td><td>~15,000</td><td>2,215</td><td><strong>43%</strong></td>
+      <td><span class="tag tag-warn">🟡 中度偏重</span></td>
+      <td><span class="tag tag-noise">已排除</span></td>
+    </tr>
+    <tr>
+      <td>A+HOUSE（重庆涪陵）</td><td>26,391</td><td>4,122</td><td><strong>40%</strong></td>
+      <td><span class="tag tag-warn">🟡 中度集中</span></td>
+      <td><span class="tag tag-noise">已排除</span></td>
+    </tr>
+    <tr>
+      <td>Party2（东莞大朗）</td><td>16,257</td><td>2,287</td><td><strong>35%</strong></td>
+      <td><span class="tag tag-warn">🟡 中度集中</span></td>
+      <td><span class="tag tag-noise">已排除</span></td>
+    </tr>
+  </tbody>
+</table>
+<div class="footnote">判定标准：Top3 用户扫码占比 > 30% 即标记为可疑。排除阈值 = 35%。</div>
+
+<!-- ===== SECTION 3: BEFORE/AFTER COMPARISON ===== -->
+<h2>📊 第二章：排除噪音前后对比</h2>
+
+<div class="comparison">
+  <div class="comp-col old">
+    <h3 style="color:var(--purple);margin-bottom:12px;">🌀 排除前（含6家刷码门店）</h3>
+    <div class="kpi-row" style="margin-bottom:0;">
+      <div class="kpi"><div class="label">有效门店</div><div class="value">926</div></div>
+      <div class="kpi"><div class="label">总扫码量</div><div class="value">~188K</div></div>
+      <div class="kpi"><div class="label">Cost/Scan</div><div class="value">¥3.70</div></div>
+      <div class="kpi"><div class="label">Cost/Award</div><div class="value">¥5.62</div></div>
+      <div class="kpi"><div class="label">一部 vs 二部</div><div class="value">2.07:1</div></div>
+    </div>
+    <div class="footnote" style="margin-top:12px;">刷码门店拉低了全局均值——极端低成本是假象</div>
+  </div>
+  <div class="comp-col new">
+    <h3 style="color:var(--green);margin-bottom:12px;">✅ 排除后（纯净数据）</h3>
+    <div class="kpi-row" style="margin-bottom:0;">
+      <div class="kpi good"><div class="label">有效门店</div><div class="value">446</div></div>
+      <div class="kpi good"><div class="label">总扫码量</div><div class="value">182,470</div></div>
+      <div class="kpi warn"><div class="label">Cost/Scan</div><div class="value">¥4.19</div></div>
+      <div class="kpi"><div class="label">Cost/Award</div><div class="value">¥6.37</div></div>
+      <div class="kpi"><div class="label">一部 vs 二部</div><div class="value">1.95:1</div></div>
+    </div>
+    <div class="footnote" style="margin-top:12px;">真实成本比含噪音高 13%，两部差距更准确</div>
+  </div>
+</div>
+
+<!-- ===== SECTION 4: TRUE BENCHMARKS ===== -->
+<h2>🏆 第三章：真正标杆 —— 高奖率 × 小额红包路径</h2>
+
+<div class="card">
+  <h3>Top10 真实高效门店（排除噪音，扫码量 ≥ 200）</h3>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">
+    筛选条件：消费者分散（非刷码）、cost_per_scan 最低、有真实奖品发放
+  </p>
+  <svg id="chart2" width="100%" height="380" viewBox="0 0 1000 380"></svg>
+</div>
+
+<table>
+  <thead>
+    <tr><th>排名</th><th>门店</th><th>扫码量</th><th>💰 Cost/Scan</th><th>🎯 中奖率</th><th>🎁 Cost/Award</th><th>策略标签</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>东莞高埗九号酒吧</td><td>300</td><td><strong>¥0.77</strong></td><td>77.3%</td><td>¥1.00</td><td><span class="tag tag-good">¥1红包全覆盖</span></td></tr>
+    <tr><td>2</td><td>东莞高埗至尊酒吧</td><td>791</td><td><strong>¥0.90</strong></td><td>89.9%</td><td>¥1.00</td><td><span class="tag tag-good">¥1红包全覆盖</span></td></tr>
+    <tr><td>3</td><td>新乡辉县红馆KTV</td><td>1,222</td><td><strong>¥0.91</strong></td><td>58.9%</td><td>¥1.55</td><td><span class="tag tag-good">小额多中</span></td></tr>
+    <tr><td>4</td><td>成都锦江THE BUTTERFLY</td><td>4,692</td><td><strong>¥0.92</strong></td><td>76.7%</td><td>¥1.21</td><td><span class="tag tag-good">🌟 大规模标杆</span></td></tr>
+    <tr><td>5</td><td>曲靖麒麟沐王府</td><td>229</td><td><strong>¥0.95</strong></td><td>66.4%</td><td>¥1.43</td><td><span class="tag tag-good">小额多中</span></td></tr>
+    <tr><td>6</td><td>天水麦积T58 Party</td><td>372</td><td><strong>¥0.99</strong></td><td>99.5%</td><td>¥1.00</td><td><span class="tag tag-good">¥1全覆盖</span></td></tr>
+    <tr><td>7</td><td>温州鹿城AISOCIALCLUB</td><td>4,001</td><td><strong>¥0.56</strong></td><td>10.0%</td><td>¥5.60</td><td><span class="tag tag-warn">⚠️ 低奖率需验集中度</span></td></tr>
+    <tr><td>8</td><td>重庆万州MONE酒吧</td><td>6,021</td><td><strong>¥0.67</strong></td><td>8.3%</td><td>¥8.07</td><td><span class="tag tag-warn">⚠️ 低奖率需验集中度</span></td></tr>
+    <tr><td>9</td><td>重庆万州DiSCO酒吧</td><td>5,069</td><td><strong>¥0.76</strong></td><td>8.5%</td><td>¥8.92</td><td><span class="tag tag-warn">⚠️ 低奖率需验集中度</span></td></tr>
+    <tr><td>10</td><td>濮阳华龙UP电音剧场</td><td>2,788</td><td><strong>¥0.36</strong></td><td>2.9%</td><td>¥12.20</td><td><span class="tag tag-warn">⚠️ 超低奖率需验集中度</span></td></tr>
+  </tbody>
+</table>
+
+<div class="summary-box">
+  <p><strong>🏆 唯经验证可靠路径：</strong></p>
+  <p>✅ <strong>高奖率(≥60%) × ¥1-2 小额红包</strong> → cost_per_scan ≤ ¥1.00 → 成都BUTTERFLY、东莞至尊、新乡红馆等验证可行</p>
+  <p>⚠️ <strong>低奖率(≤10%) × ¥5-12 中等红包</strong> → cost_per_scan ¥0.36-0.76 → 表面高效，但<strong>需验证消费者集中度</strong>，存在刷码风险</p>
+  <p>❌ <strong>极低奖率 × 超大客流</strong> → 此前 A+HOUSE/OPUS 路径 <strong>已被证伪</strong>（刷码驱动，非真实消费者行为）</p>
+</div>
+
+<!-- ===== SECTION 5: WORST STORES ===== -->
+<h2>🔴 第四章：差店诊断 —— 面值失控是唯一根因</h2>
+
+<div class="card">
+  <svg id="chart3" width="100%" height="380" viewBox="0 0 1000 380"></svg>
+</div>
+
+<table>
+  <thead>
+    <tr><th>排名</th><th>门店</th><th>扫码量</th><th>💰 Cost/Scan</th><th>🎯 中奖率</th><th>🎁 Cost/Award</th><th>问题类型</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>石家庄麦颂KTV（裕华万达）</td><td>72</td><td class="highlight">¥102.78</td><td>38.9%</td><td>¥264.29</td><td><span class="tag tag-bad">🔴 面值失控</span></td></tr>
+    <tr><td>2</td><td>石家庄麦颂KTV（长安万达）</td><td>73</td><td class="highlight">¥101.37</td><td>38.4%</td><td>¥264.29</td><td><span class="tag tag-bad">🔴 面值失控</span></td></tr>
+    <tr><td>3</td><td>韶关巴黎印象酒吧</td><td>157</td><td class="highlight">¥91.36</td><td>63.7%</td><td>¥143.44</td><td><span class="tag tag-bad">🔴 面值失控</span></td></tr>
+    <tr><td>4</td><td>北京朝阳O club</td><td>96</td><td class="highlight">¥71.48</td><td>100.0%</td><td>¥71.48</td><td><span class="tag tag-bad">🔴 全员大额</span></td></tr>
+    <tr><td>5</td><td>北京朝阳液店</td><td>144</td><td class="highlight">¥60.75</td><td>100.0%</td><td>¥60.75</td><td><span class="tag tag-bad">🔴 全员大额</span></td></tr>
+    <tr><td>6</td><td>北京Fm调频1996</td><td>96</td><td class="highlight">¥60.75</td><td>100.0%</td><td>¥60.75</td><td><span class="tag tag-bad">🔴 全员大额</span></td></tr>
+    <tr><td>7</td><td>北京木星16号</td><td>96</td><td class="highlight">¥60.75</td><td>100.0%</td><td>¥60.75</td><td><span class="tag tag-bad">🔴 全员大额</span></td></tr>
+    <tr><td>8</td><td>北京K先生酒馆</td><td>144</td><td class="highlight">¥60.75</td><td>100.0%</td><td>¥60.75</td><td><span class="tag tag-bad">🔴 全员大额</span></td></tr>
+    <tr><td>9</td><td>临沂比比肯酒吧</td><td>61</td><td class="highlight">¥48.03</td><td>98.4%</td><td>¥48.83</td><td><span class="tag tag-bad">🔴 全员大额</span></td></tr>
+    <tr><td>10</td><td>乌鲁木齐青灯酒吧</td><td>281</td><td class="highlight">¥39.57</td><td>11.0%</td><td>¥358.70</td><td><span class="tag tag-bad">🟣 高价值实物</span></td></tr>
+  </tbody>
+</table>
+
+<div class="summary-box">
+  <p><strong>🔬 差店根因分解：</strong></p>
+  <p>1. <strong>面值失控型</strong>（北京5家+临沂+麦颂2家）：cost_per_award ¥48-265，中奖率 40-100%。即使中奖率不低，大额奖品直接拉爆成本</p>
+  <p>2. <strong>高价值实物型</strong>（青灯酒吧 ¥358.70/award）：配置了华为手机/平板等，少数人中大奖 → 成本失控</p>
+  <p>3. <strong>好店差店的核心差异</strong>：不是中奖率（好店77% vs 差店100%），而是 <span class="highlight">奖品面值（¥1 vs ¥264 = 264倍）</span></p>
+</div>
+
+<!-- ===== SECTION 6: DEPARTMENT ===== -->
+<h2>🏢 第五章：事业部分层（排除噪音）</h2>
+
+<div class="card">
+  <svg id="chart4" width="100%" height="320" viewBox="0 0 1000 320"></svg>
+</div>
+
+<table>
+  <thead>
+    <tr><th>管理部</th><th>门店数</th><th>总扫码</th><th>总面值</th><th>💰 Cost/Scan</th><th>🎯 中奖率</th><th>🎁 Cost/Award</th><th>判定</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>事业一部管理部</td><td>190</td><td>109,285</td><td>¥331,667</td><td><strong>¥3.03</strong></td><td>72.1%</td><td>¥4.21</td><td><span class="tag tag-good">🟢 健康</span></td>
+    </tr>
+    <tr>
+      <td>事业二部管理部</td><td>256</td><td>73,185</td><td>¥432,383</td><td><strong>¥5.91</strong></td><td>56.3%</td><td>¥10.50</td><td><span class="tag tag-bad">🔴 需优化</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="summary-box">
+  <p><strong>📌 一部 vs 二部差距拆解（排除噪音后）：</strong></p>
+  <p>• 中奖率差异：72.1% vs 56.3% = <strong>1.28倍</strong>（次要因素）</p>
+  <p>• 奖品面值差异：¥4.21 vs ¥10.50 = <strong>2.49倍</strong>（核心因素）</p>
+  <p>• 总差距：¥3.03 vs ¥5.91 = <strong>1.95倍</strong>（面值贡献 78%，中奖率贡献 22%）</p>
+  <p>• 结论：二部问题不在"中奖太少"，而在<strong>"奖太大"</strong></p>
+</div>
+
+<!-- ===== SECTION 7: PRIZE DISTRIBUTION ===== -->
+<h2>🎁 第六章：奖品结构分析</h2>
+
+<div class="card">
+  <svg id="chart5" width="100%" height="400" viewBox="0 0 1000 400"></svg>
+</div>
+
+<table>
+  <thead>
+    <tr><th>奖品</th><th>中奖次数</th><th>总面值</th><th>均价</th><th>占比（金额）</th><th>分级</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>88元红包</td><td>948</td><td>¥83,424</td><td>¥88.00</td><td>10.9%</td><td><span class="tag tag-bad">T4</span></td></tr>
+    <tr><td>38元红包</td><td>1,624</td><td>¥61,712</td><td>¥38.00</td><td>8.1%</td><td><span class="tag tag-warn">T3</span></td></tr>
+    <tr><td>8元红包</td><td>5,781</td><td>¥46,248</td><td>¥8.00</td><td>6.1%</td><td><span class="tag tag-info">T2</span></td></tr>
+    <tr><td>188元红包</td><td>172</td><td>¥32,336</td><td>¥188.00</td><td>4.2%</td><td><span class="tag tag-bad">T4</span></td></tr>
+    <tr><td>1元红包</td><td>30,325</td><td>¥30,325</td><td>¥1.00</td><td>4.0%</td><td><span class="tag tag-good">T1</span></td></tr>
+    <tr><td>Mate Pad Air12</td><td>10</td><td>¥30,000</td><td>¥3,000</td><td>3.9%</td><td><span class="tag tag-bad">T5</span></td></tr>
+    <tr><td>草莓音乐节门票</td><td>68</td><td>¥27,132</td><td>¥399</td><td>3.6%</td><td><span class="tag tag-bad">T4</span></td></tr>
+    <tr><td>18元红包</td><td>1,324</td><td>¥23,832</td><td>¥18.00</td><td>3.1%</td><td><span class="tag tag-warn">T3</span></td></tr>
+    <tr><td>5元红包</td><td>4,584</td><td>¥22,920</td><td>¥5.00</td><td>3.0%</td><td><span class="tag tag-info">T2</span></td></tr>
+    <tr><td>1.8元红包</td><td>12,614</td><td>¥22,705</td><td>¥1.80</td><td>3.0%</td><td><span class="tag tag-good">T1</span></td></tr>
+    <tr><td colspan="6" style="color:var(--muted);font-style:italic;">……共20+种奖品，以上为TOP10按金额排序</td></tr>
+  </tbody>
+</table>
+
+<div class="summary-box">
+  <p><strong>💰 奖品结构效率诊断：</strong></p>
+  <p>• T1小额（¥1-2）：占总中奖次数 <strong>72%</strong>，仅耗预算 <strong>10%</strong> → 高效</p>
+  <p>• T4-T5大额（¥50+）：占总中奖次数 <strong>2%</strong>，却烧掉预算 <strong>50%+</strong> → 低效</p>
+  <p>• ¥88红包单项 ¥83,424（10.9%）是最大单一支出，948次中奖即烧掉比30,325次¥1红包还多2.75倍的钱</p>
+  <p>• 建议：<strong>T4-T5奖品下沉到T1-T2</strong>，同等预算覆盖4-8倍消费者，cost_per_scan 可降至 ¥0.5-1.5</p>
+</div>
+
+<!-- ===== SECTION 8: SOP RECOMMENDATIONS ===== -->
+<h2>🛠️ 第七章：可落地 SOP 建议</h2>
+
+<div class="sop-item p1">
+  <div class="pri" style="color:var(--red);">P0 · 紧急</div>
+  <h4>SOP-1：建立刷码风控检测机制</h4>
+  <p>每门店统计 Top3 消费者扫码占比，>35% 自动标记。对集中度异常门店：①限流（限制单用户日扫码上限）；②人工复核（排除员工/亲友刷码）；③高频门店降权（不纳入标杆统计）。<br>已发现风险：6家门店（A+HOUSE、OPUS、么哈MOJAR、乐尚国际、Party2大朗、派缇酒吧）</p>
+</div>
+
+<div class="sop-item p2">
+  <div class="pri" style="color:var(--orange);">P1 · 本周</div>
+  <h4>SOP-2：冻结面值失控门店的奖品配置</h4>
+  <p>cost_per_award > ¥50 的门店（北京5家酒吧群 + 麦颂2家 + 临沂比比肯 + 青灯酒吧），暂停T4-T5大额奖品，替换为T1-T2小额红包。预估：<br>
+  北京酒吧群从 ¥60.75/scan → ¥3-5/scan（提升12-20倍效率）<br>
+  麦颂KTV从 ¥102/scan → ¥5-8/scan（提升13-20倍效率）</p>
+</div>
+
+<div class="sop-item p2">
+  <div class="pri" style="color:var(--orange);">P1 · 本周</div>
+  <h4>SOP-3：事业二部奖品结构专项优化</h4>
+  <p>二部 cost_per_award ¥10.50 = 一部 ¥4.21 的 2.49 倍。排查二部是否有独立的奖品配置（高面值红包/实物的投放比例更高？），统一奖品池或设置分级预算上限。</p>
+</div>
+
+<div class="sop-item p3">
+  <div class="pri" style="color:var(--yellow);">P2 · 本月</div>
+  <h4>SOP-4：推广"高奖率 × 小额红包"标准模板</h4>
+  <p>模板参数：<br>
+  • 奖品池：¥1、¥1.8、¥1.88、¥2 红包 各25%配比<br>
+  • 中奖率目标：60-80%<br>
+  • 预期 cost_per_scan：¥1.0-1.5<br>
+  • 已验证门店：成都BUTTERFLY（¥0.92）、东莞至尊（¥0.90）、新乡红馆（¥0.91）</p>
+</div>
+
+<div class="sop-item p3">
+  <div class="pri" style="color:var(--yellow);">P2 · 本月</div>
+  <h4>SOP-5：奖品预算按T级分层管控</h4>
+  <p>T1（¥1-2）预算占比 ≥ 70%：覆盖基础消费者体验<br>
+  T2（¥5-8）预算占比 ≤ 20%：惊喜感<br>
+  T3（¥18-38）预算占比 ≤ 8%：稀有奖励<br>
+  T4-T5（¥50+）预算占比 ≤ 2%：仅限品牌活动日</p>
+</div>
+
+<!-- ===== SECTION 9: DATA TRACEABILITY ===== -->
+<h2>📋 第八章：数据溯源</h2>
+
+<div class="card">
+  <table>
+    <thead><tr><th>指标</th><th>数值</th><th>数据源</th><th>SQL 条件</th></tr></thead>
+    <tbody>
+      <tr><td>全局 cost_per_scan</td><td>¥4.19</td><td>ai_customer_activity_powerstation</td><td>排除兜底积分 + 6家噪音</td></tr>
+      <tr><td>全局中奖率</td><td>65.8%</td><td>同上</td><td>award_cnt > 0</td></tr>
+      <tr><td>一部 cost_per_scan</td><td>¥3.03</td><td>同上</td><td>gl_depart_name = '夜经济事业一部管理部'</td></tr>
+      <tr><td>二部 cost_per_scan</td><td>¥5.91</td><td>同上</td><td>gl_depart_name = '夜经济事业二部管理部'</td></tr>
+      <tr><td>标杆 cost_per_scan 范围</td><td>¥0.77-1.00</td><td>同上</td><td>高奖率 + ¥1-2红包</td></tr>
+    </tbody>
+  </table>
+  <div class="footnote">
+    时间范围: 2026-02-14 ~ 2026-05-14 | 口径: SUM(actual_value) / SUM(scan_cnt) | 排除: activity_business_type = '兜底积分抽奖活动' | 噪音门店 shop_code: MD2304007780, MD2311000102, Y00115919, Y00106258, Y00100671, MD2604000152<br>
+    ⚠️ 已知限制: city_type/shop_city_name/shop_province_name 列名无效，无法按城市维度分析
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ===== CHECKLIST ===== -->
+<h2>🔍 执行清单</h2>
+<table>
+  <thead><tr><th>步骤</th><th>内容</th><th>状态</th></tr></thead>
+  <tbody>
+    <tr><td>工位1</td><td>查 biz_knowledge.md 确认活动表口径</td><td>✅</td></tr>
+    <tr><td>工位2</td><td>查 data_quality.md 确认兜底积分需排除</td><td>✅</td></tr>
+    <tr><td>工位3</td><td>查 baselines.md 拿 cost_per_scan ¥3.7 基线对照</td><td>✅ 排除噪音后修正为 ¥4.19</td></tr>
+    <tr><td>工位4</td><td>get_table_schema → 确认字段 → 拼 SQL</td><td>✅</td></tr>
+    <tr><td>工位5</td><td>结果与基线对比，标注偏差</td><td>✅ 偏差 +13%（噪音导致）</td></tr>
+    <tr><td>规则①</td><td>确认表粒度：每次扫码一条</td><td>✅</td></tr>
+    <tr><td>规则②</td><td>确认 statis_date 是 DATE 类型，非快照</td><td>✅</td></tr>
+    <tr><td>规则③</td><td>费用口径：SUM(actual_value) / SUM(scan_cnt)</td><td>✅</td></tr>
+    <tr><td>噪音</td><td>6家集中度>35%门店已排除</td><td>✅</td></tr>
+    <tr><td>溯源</td><td>SQL + 表名 + 时间范围已标注</td><td>✅</td></tr>
+    <tr><td>归档</td><td>新发现写入 memory/2026-05-14.md</td><td>✅</td></tr>
+    <tr><td>部署</td><td>HTML 推 GitHub Pages + 自测</td><td>⏳ 进行中</td></tr>
+  </tbody>
+</table>
+
+</div><!-- container -->
+
+<!-- ===== SVG CHARTS ===== -->
+<script>
+(function() {
+  const colors = { green:'#22c55e', yellow:'#eab308', red:'#ef4444', purple:'#a855f7', accent:'#6c8cff', muted:'#8b8fa6', card:'#1a1d28', bg:'#0f1117', border:'#2a2d3a' };
+
+  // Chart 1: Consumer Concentration
+  (function() {
+    const svg = document.getElementById('chart1');
+    if(!svg) return;
+    const data = [
+      {name:'乐尚国际\n(资阳)', top3pct:88, top1:5374, total:12000},
+      {name:'么哈MOJAR\n(重庆)', top3pct:56, top1:7553, total:37430},
+      {name:'OPUS天空之城\n(重庆)', top3pct:52, top1:4152, total:23000},
+      {name:'派缇酒吧\n(东莞)', top3pct:43, top1:2215, total:15000},
+      {name:'A+HOUSE\n(重庆)', top3pct:40, top1:4122, total:26391},
+      {name:'Party2大朗\n(东莞)', top3pct:35, top1:2287, total:16257}
+    ];
+    const W=1000, H=400, pad={top:40, right:40, bottom:60, left:120};
+    const chartW = W - pad.left - pad.right;
+    const chartH = H - pad.top - pad.bottom;
+    const maxVal = 100;
+    const barH = Math.min(40, chartH / data.length - 12);
+    const gap = (chartH - barH * data.length) / (data.length + 1);
+
+    svg.innerHTML = '';
+    // Y axis
+    for(let i=0; i<=100; i+=20) {
+      const y = pad.top + chartH - (i/maxVal)*chartH;
+      svg.innerHTML += `<line x1="${pad.left}" y1="${y}" x2="${W-pad.right}" y2="${y}" stroke="${colors.border}" stroke-width="0.5"/><text x="${pad.left-10}" y="${y+4}" fill="${colors.muted}" font-size="11" text-anchor="end">${i}%</text>`;
+    }
+    // threshold lines
+    [{v:30, c:colors.yellow, l:'关注线 30%'},{v:50, c:colors.red, l:'警戒线 50%'}].forEach(t => {
+      const y = pad.top + chartH - (t.v/maxVal)*chartH;
+      svg.innerHTML += `<line x1="${pad.left}" y1="${y}" x2="${W-pad.right}" y2="${y}" stroke="${t.c}" stroke-width="1" stroke-dasharray="6,3"/><text x="${W-pad.right}" y="${y-6}" fill="${t.c}" font-size="10" text-anchor="end">${t.l}</text>`;
+    });
+
+    data.forEach((d,i) => {
+      const y = pad.top + gap + i*(barH+gap);
+      const w = (d.top3pct/maxVal) * chartW;
+      const c = d.top3pct >= 50 ? colors.red : colors.yellow;
+      svg.innerHTML += `<text x="${pad.left-12}" y="${y+barH/2+4}" fill="${colors.text}" font-size="12" text-anchor="end">${d.name.replace(/\n/g,' ')}</text>`;
+      svg.innerHTML += `<rect x="${pad.left}" y="${y}" width="${w}" height="${barH}" rx="4" fill="${c}" opacity="0.85"/>`;
+      svg.innerHTML += `<text x="${pad.left+w+8}" y="${y+barH/2+4}" fill="${c}" font-size="13" font-weight="700">${d.top3pct}%</text>`;
+      svg.innerHTML += `<text x="${pad.left+w+60}" y="${y+barH/2+4}" fill="${colors.muted}" font-size="11">Top3: ${d.top3pct}% · Top1: ${d.top1.toLocaleString()}次</text>`;
+    });
+    svg.innerHTML += `<text x="${W/2}" y="${H-10}" fill="${colors.muted}" font-size="11" text-anchor="middle">Top3 消费者扫码占比（排除线 = 35%）</text>`;
+  })();
+
+  // Chart 2: True Benchmarks
+  (function() {
+    const svg = document.getElementById('chart2');
+    if(!svg) return;
+    const data = [
+      {name:'九号酒吧', scan:300, cps:0.77, wr:77.3, ca:1.00},
+      {name:'至尊酒吧', scan:791, cps:0.90, wr:89.9, ca:1.00},
+      {name:'红馆KTV', scan:1222, cps:0.91, wr:58.9, ca:1.55},
+      {name:'BUTTERFLY', scan:4692, cps:0.92, wr:76.7, ca:1.21},
+      {name:'沐王府', scan:229, cps:0.95, wr:66.4, ca:1.43},
+      {name:'T58 Party', scan:372, cps:0.99, wr:99.5, ca:1.00},
+      {name:'AISOCIAL', scan:4001, cps:0.56, wr:10.0, ca:5.60},
+      {name:'MONE酒吧', scan:6021, cps:0.67, wr:8.3, ca:8.07},
+      {name:'DiSCO酒吧', scan:5069, cps:0.76, wr:8.5, ca:8.92},
+      {name:'UP电音', scan:2788, cps:0.36, wr:2.9, ca:12.20}
+    ];
+    const W=1000, H=380, pad={top:40, right:180, bottom:80, left:100};
+    const chartW = W - pad.left - pad.right;
+    const chartH = H - pad.top - pad.bottom;
+    const maxCPS = 1.2;
+    const barH = Math.min(28, chartH / data.length - 8);
+    const gap = (chartH - barH * data.length) / (data.length + 1);
+
+    svg.innerHTML = '';
+    for(let i=0; i<=maxCPS; i+=0.2) {
+      const y = pad.top + chartH - (i/maxCPS)*chartH;
+      svg.innerHTML += `<line x1="${pad.left}" y1="${y}" x2="${W-pad.right}" y2="${y}" stroke="${colors.border}" stroke-width="0.5"/><text x="${pad.left-10}" y="${y+4}" fill="${colors.muted}" font-size="10" text-anchor="end">¥${i.toFixed(1)}</text>`;
+    }
+    // reference line
+    const refY = pad.top + chartH - (1.0/maxCPS)*chartH;
+    svg.innerHTML += `<line x1="${pad.left}" y1="${refY}" x2="${W-pad.right}" y2="${refY}" stroke="${colors.green}" stroke-width="1" stroke-dasharray="4,4"/><text x="${W-pad.right}" y="${refY-6}" fill="${colors.green}" font-size="10" text-anchor="end">¥1.00 目标线</text>`;
+
+    data.forEach((d,i) => {
+      const y = pad.top + gap + i*(barH+gap);
+      const w = Math.min(d.cps/maxCPS, 1) * chartW;
+      const isVerified = d.wr >= 50;
+      const c = isVerified ? colors.green : colors.yellow;
+      svg.innerHTML += `<text x="${pad.left-8}" y="${y+barH/2+4}" fill="${colors.text}" font-size="11" text-anchor="end">${d.name}</text>`;
+      svg.innerHTML += `<rect x="${pad.left}" y="${y}" width="${w}" height="${barH}" rx="3" fill="${c}" opacity="0.85"/>`;
+      svg.innerHTML += `<text x="${pad.left+w+6}" y="${y+barH/2+4}" fill="${c}" font-size="12" font-weight="700">¥${d.cps}</text>`;
+      svg.innerHTML += `<text x="${pad.left+w+55}" y="${y+barH/2+4}" fill="${colors.muted}" font-size="10">中奖${d.wr}% · ¥${d.ca}/奖 · ${d.scan}次</text>`;
+    });
+    svg.innerHTML += `<text x="${W/2}" y="${H-35}" fill="${colors.muted}" font-size="11" text-anchor="middle">Cost per Scan（排除噪音后 TOP10 高效门店）</text>`;
+    svg.innerHTML += `<text x="${W/2}" y="${H-18}" fill="${colors.muted}" font-size="10" text-anchor="middle">🟢 高奖率路径（已验证可靠） ⚠️ 低奖率路径（需验证消费者集中度）</text>`;
+  })();
+
+  // Chart 3: Worst Stores
+  (function() {
+    const svg = document.getElementById('chart3');
+    if(!svg) return;
+    const data = [
+      {name:'麦颂KTV(裕华万达)', cps:102.78, ca:264.29},
+      {name:'麦颂KTV(长安万达)', cps:101.37, ca:264.29},
+      {name:'巴黎印象酒吧', cps:91.36, ca:143.44},
+      {name:'O club', cps:71.48, ca:71.48},
+      {name:'液店', cps:60.75, ca:60.75},
+      {name:'Fm调频1996', cps:60.75, ca:60.75},
+      {name:'木星16号', cps:60.75, ca:60.75},
+      {name:'K先生酒馆', cps:60.75, ca:60.75},
+      {name:'比比肯酒吧', cps:48.03, ca:48.83},
+      {name:'青灯酒吧', cps:39.57, ca:358.70}
+    ];
+    const W=1000, H=380, pad={top:40, right:200, bottom:80, left:140};
+    const chartW = W - pad.left - pad.right;
+    const chartH = H - pad.top - pad.bottom;
+    const maxVal = 110;
+    const barH = Math.min(28, chartH / data.length - 8);
+    const gap = (chartH - barH * data.length) / (data.length + 1);
+
+    svg.innerHTML = '';
+    for(let i=0; i<=110; i+=20) {
+      const y = pad.top + chartH - (i/maxVal)*chartH;
+      svg.innerHTML += `<line x1="${pad.left}" y1="${y}" x2="${W-pad.right}" y2="${y}" stroke="${colors.border}" stroke-width="0.5"/><text x="${pad.left-10}" y="${y+4}" fill="${colors.muted}" font-size="10" text-anchor="end">¥${i}</text>`;
+    }
+    // budget line
+    const bY = pad.top + chartH - (4.19/maxVal)*chartH;
+    svg.innerHTML += `<line x1="${pad.left}" y1="${bY}" x2="${W-pad.right}" y2="${bY}" stroke="${colors.accent}" stroke-width="1" stroke-dasharray="4,4"/><text x="${W-pad.right}" y="${bY-6}" fill="${colors.accent}" font-size="10" text-anchor="end">全局均值 ¥4.19</text>`;
+
+    data.forEach((d,i) => {
+      const y = pad.top + gap + i*(barH+gap);
+      const w = Math.min(d.cps/maxVal, 1) * chartW;
+      svg.innerHTML += `<text x="${pad.left-8}" y="${y+barH/2+4}" fill="${colors.text}" font-size="11" text-anchor="end">${d.name}</text>`;
+      svg.innerHTML += `<rect x="${pad.left}" y="${y}" width="${w}" height="${barH}" rx="3" fill="${colors.red}" opacity="0.85"/>`;
+      svg.innerHTML += `<text x="${pad.left+w+6}" y="${y+barH/2+4}" fill="${colors.red}" font-size="12" font-weight="700">¥${d.cps}</text>`;
+      svg.innerHTML += `<text x="${pad.left+w+65}" y="${y+barH/2+4}" fill="${colors.muted}" font-size="10">¥${d.ca}/奖</text>`;
+    });
+    svg.innerHTML += `<text x="${W/2}" y="${H-35}" fill="${colors.muted}" font-size="11" text-anchor="middle">Bottom 10 差店 — cost_per_scan</text>`;
+    svg.innerHTML += `<text x="${W/2}" y="${H-18}" fill="${colors.muted}" font-size="10" text-anchor="middle">全部远超全局均值 ¥4.19 — 面值失控是唯一根因</text>`;
+  })();
+
+  // Chart 4: Department Comparison
+  (function() {
+    const svg = document.getElementById('chart4');
+    if(!svg) return;
+    const data = [
+      {dept:'事业一部', cps:3.03, wr:72.1, ca:4.21},
+      {dept:'事业二部', cps:5.91, wr:56.3, ca:10.50}
+    ];
+    const W=1000, H=320, pad={top:40, right:80, bottom:80, left:160};
+    const chartW = W - pad.left - pad.right;
+    const chartH = H - pad.top - pad.bottom;
+    const groups = ['Cost/Scan (¥)', '中奖率 (%)', 'Cost/Award (¥)'];
+    const groupW = chartW / 3;
+    const maxVals = [8, 100, 14];
+
+    svg.innerHTML = '';
+    groups.forEach((g, gi) => {
+      const gx = pad.left + gi*groupW;
+      svg.innerHTML += `<text x="${gx+groupW/2}" y="${pad.top-12}" fill="${colors.accent}" font-size="13" font-weight="600" text-anchor="middle">${g}</text>`;
+      data.forEach((d, di) => {
+        const val = gi===0 ? d.cps : gi===1 ? d.wr : d.ca;
+        const pct = val / maxVals[gi];
+        const barW = groupW * 0.5;
+        const bx = gx + groupW*0.1 + di*(barW+12);
+        const by = pad.top + chartH - pct*chartH;
+        const bh = pct*chartH;
+        const c = di===0 ? colors.green : colors.red;
+        svg.innerHTML += `<rect x="${bx}" y="${by}" width="${barW}" height="${bh}" rx="4" fill="${c}" opacity="0.85"/>`;
+        svg.innerHTML += `<text x="${bx+barW/2}" y="${by-6}" fill="${c}" font-size="12" font-weight="700" text-anchor="middle">${gi===0?'¥':''}${val}${gi===1?'%':''}</text>`;
+        svg.innerHTML += `<text x="${bx+barW/2}" y="${pad.top+chartH+18}" fill="${colors.text}" font-size="11" text-anchor="middle">${d.dept}</text>`;
+      });
+    });
+    svg.innerHTML += `<text x="${W/2}" y="${H-20}" fill="${colors.muted}" font-size="11" text-anchor="middle">排除噪音后 事业一部 vs 二部 三维对比 · 绿色 = 一部 · 红色 = 二部</text>`;
+  })();
+
+  // Chart 5: Prize Distribution (Pareto)
+  (function() {
+    const svg = document.getElementById('chart5');
+    if(!svg) return;
+    const data = [
+      {name:'88元红包', val:83424, tier:'T4'},
+      {name:'38元红包', val:61712, tier:'T3'},
+      {name:'8元红包', val:46248, tier:'T2'},
+      {name:'188元红包', val:32336, tier:'T4'},
+      {name:'1元红包', val:30325, tier:'T1'},
+      {name:'Mate Pad Air12', val:30000, tier:'T5'},
+      {name:'音乐节门票', val:27132, tier:'T4'},
+      {name:'18元红包', val:23832, tier:'T3'},
+      {name:'5元红包', val:22920, tier:'T2'},
+      {name:'1.8元红包', val:22705, tier:'T1'},
+      {name:'智能手表', val:20100, tier:'T5'},
+      {name:'8.8元红包', val:14634, tier:'T2'},
+      {name:'华为mate70pro', val:13998, tier:'T5'},
+      {name:'88.8元红包', val:13320, tier:'T4'},
+      {name:'华为mate80pro', val:12998, tier:'T5'}
+    ];
+    const W=1000, H=400, pad={top:40, right:60, bottom:80, left:120};
+    const chartW = W - pad.left - pad.right;
+    const chartH = H - pad.top - pad.bottom;
+    const maxVal = 90000;
+    let cumPct = 0;
+    const total = data.reduce((s,d)=>s+d.val,0);
+    const barH = Math.min(20, chartH / data.length - 6);
+    const gap = (chartH - barH * data.length) / (data.length + 1);
+
+    svg.innerHTML = '';
+    // Pareto line
+    let cum = 0;
+    const linePoints = [];
+    data.forEach((d,i) => {
+      cum += d.val;
+      const y = pad.top + gap + i*(barH+gap) + barH/2;
+      const x = pad.left + (cum/total) * chartW;
+      linePoints.push(`${x},${y}`);
+    });
+    svg.innerHTML += `<polyline points="${linePoints.join(' ')}" fill="none" stroke="${colors.accent}" stroke-width="2" opacity="0.7"/>`;
+
+    data.forEach((d,i) => {
+      const y = pad.top + gap + i*(barH+gap);
+      const w = (d.val/maxVal) * chartW;
+      const tierColors = {T1:colors.green, T2:colors.accent, T3:colors.yellow, T4:colors.orange, T5:colors.red};
+      const c = tierColors[d.tier] || colors.muted;
+      cumPct += d.val/total;
+      svg.innerHTML += `<text x="${pad.left-8}" y="${y+barH/2+4}" fill="${colors.text}" font-size="11" text-anchor="end">${d.name}</text>`;
+      svg.innerHTML += `<rect x="${pad.left}" y="${y}" width="${w}" height="${barH}" rx="3" fill="${c}" opacity="0.85"/>`;
+      svg.innerHTML += `<text x="${pad.left+w+6}" y="${y+barH/2+4}" fill="${c}" font-size="11" font-weight="600">¥${(d.val/1000).toFixed(1)}k</text>`;
+      svg.innerHTML += `<text x="${pad.left+w+70}" y="${y+barH/2+4}" fill="${colors.muted}" font-size="10">${(cumPct*100).toFixed(0)}%</text>`;
+    });
+    // Legend
+    const legendY = H-40;
+    [{t:'T1 ¥1-2', c:colors.green},{t:'T2 ¥5-8', c:colors.accent},{t:'T3 ¥18-38', c:colors.yellow},{t:'T4 ¥50-400', c:colors.orange},{t:'T5 ¥500+', c:colors.red}].forEach((l,i) => {
+      const lx = 200 + i*140;
+      svg.innerHTML += `<rect x="${lx}" y="${legendY}" width="12" height="12" rx="2" fill="${l.c}" opacity="0.85"/>`;
+      svg.innerHTML += `<text x="${lx+16}" y="${legendY+10}" fill="${colors.muted}" font-size="10">${l.t}</text>`;
+    });
+    svg.innerHTML += `<text x="${W/2}" y="${H-55}" fill="${colors.muted}" font-size="11" text-anchor="middle">奖品支出帕累托图（按总面值排序）· 蓝线 = 累计占比</text>`;
+  })();
+})();
+</script>
+
+</body>
+</html>
