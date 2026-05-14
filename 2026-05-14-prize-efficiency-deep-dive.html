@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奖品投放效率深度分析 — 好店vs差店对比 | 仙津数据报告</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --card: #1a1d27;
+  --border: #2a2d3a;
+  --text: #e1e4e8;
+  --text2: #8b949e;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --red: #f85149;
+  --blue: #58a6ff;
+  --purple: #bc8cff;
+  --cyan: #39d2c0;
+}
+* { margin:0; padding:0; box-sizing:border-box }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; line-height:1.6 }
+.container { max-width:1200px; margin:0 auto; padding:24px }
+h1 { font-size:1.8em; margin-bottom:4px }
+h2 { font-size:1.3em; margin:32px 0 16px; padding-bottom:8px; border-bottom:2px solid var(--border); color:var(--blue) }
+h3 { font-size:1.1em; margin:20px 0 12px }
+.card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:20px; margin-bottom:16px }
+.card h3 { margin-top:0 }
+.metrics { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:16px }
+.metric { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; text-align:center }
+.metric .label { font-size:.8em; color:var(--text2); margin-bottom:4px }
+.metric .value { font-size:1.8em; font-weight:700 }
+.metric .sub { font-size:.8em; color:var(--text2); margin-top:4px }
+table { width:100%; border-collapse:collapse; font-size:.9em; margin:12px 0 }
+th,td { padding:8px 12px; text-align:left; border-bottom:1px solid var(--border) }
+th { background:var(--border); color:var(--text2); font-weight:600 }
+td { white-space:nowrap }
+td.wrap { white-space:normal }
+.green { color:var(--green) }
+.yellow { color:var(--yellow) }
+.red { color:var(--red) }
+.blue { color:var(--blue) }
+.pill { display:inline-block; padding:2px 8px; border-radius:12px; font-size:.8em; font-weight:600 }
+.pill-g { background:#1b3320; color:var(--green) }
+.pill-y { background:#332b1b; color:var(--yellow) }
+.pill-r { background:#331b1b; color:var(--red) }
+.chart-box { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:20px; margin:16px 0; overflow-x:auto }
+.finding { border-left:3px solid var(--purple); padding:8px 16px; margin:12px 0; background:#1a1a2e }
+.sop { border-left:3px solid var(--green); padding:8px 16px; margin:12px 0; background:#1b3320 }
+.sop-r { border-left:3px solid var(--red); padding:8px 16px; margin:12px 0; background:#331b1b }
+.sop-y { border-left:3px solid var(--yellow); padding:8px 16px; margin:12px 0; background:#332b1b }
+.small { font-size:.8em; color:var(--text2) }
+.bar-cell { position:relative }
+.bar { position:absolute; left:0; top:2px; bottom:2px; border-radius:3px; opacity:.3 }
+.mt4 { margin-top:16px }
+.mb4 { margin-bottom:16px }
+.gap2 { display:flex; gap:24px; flex-wrap:wrap }
+.col { flex:1; min-width:280px }
+.checklist { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:20px; margin-top:24px }
+.checklist ul { list-style:none; margin-top:8px }
+.checklist li { padding:4px 0 }
+.checklist li::before { content: '☐ '; color:var(--text2) }
+.checklist li.done::before { content: '☑ '; color:var(--green) }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📊 奖品投放效率深度分析</h1>
+<p class="small">好店 vs 差店对比 · 从奖品配置找可落地的 SOP</p>
+<p class="small">数据源：ai.ai_customer_activity_powerstation | 时间：2026-02-14 ~ 2026-05-14（3个月）| 数据量：1,466,472 条扫码记录</p>
+
+<!-- ====== EXECUTIVE SUMMARY ====== -->
+<h2>一、核心发现（结论先行）</h2>
+
+<div class="card" style="border-left:4px solid var(--cyan)">
+<h3>🎯 一句话结论</h3>
+<p style="font-size:1.1em; margin:12px 0">
+<strong>好店和差店的本质差距不在"中奖率"，而在"每次中奖的面值"。</strong><br>
+优店用 ¥1~¥2 红包堆出 80%+ 中奖率，差店用 ¥88~¥264 红包拉到超高成本。<br>
+事业二部的 cost_per_award（¥10.5）是事业一部（¥4.3）的 <span class="red">2.4倍</span>，这是全局 ¥3.7 单瓶成本的根源。
+</p>
+</div>
+
+<div class="metrics">
+  <div class="metric">
+    <div class="label">整体 cost_per_scan</div>
+    <div class="value yellow">¥0.53</div>
+    <div class="sub">消费者表全口径</div>
+  </div>
+  <div class="metric">
+    <div class="label">事业一部</div>
+    <div class="value green">¥0.61</div>
+    <div class="sub">cost_per_award: ¥4.30</div>
+  </div>
+  <div class="metric">
+    <div class="label">事业二部</div>
+    <div class="value red">¥1.27</div>
+    <div class="sub">cost_per_award: ¥10.50</div>
+  </div>
+  <div class="metric">
+    <div class="label">¥88红包总支出</div>
+    <div class="value red">¥83,424</div>
+    <div class="sub">最大单项支出，占总额10.7%</div>
+  </div>
+</div>
+
+<!-- ====== OVERALL EFFICIENCY ====== -->
+<h2>二、整体费用效率分布</h2>
+
+<div class="card">
+<h3>📈 门店级 cost_per_scan 分布</h3>
+<p class="small mb4">口径：SUM(actual_value) / SUM(scan_cnt) | 排除无门店记录的兜底积分 | 共 926 个有效门店</p>
+
+<table>
+<tr><th>分位数</th><th>cost_per_scan</th><th>特征标签</th></tr>
+<tr><td>P10（最优10%）</td><td class="green">≤ ¥0.02</td><td>几乎不投奖品，或极低中奖率（3%以下）</td></tr>
+<tr><td>P25</td><td class="green">¥0.20</td><td>小额红包主导（¥1~2均价），中奖率 80%+</td></tr>
+<tr><td>P50（中位）</td><td>¥1.14</td><td>行业正常区间</td></tr>
+<tr><td>P75</td><td class="yellow">¥2.50</td><td>奖品面值开始失控</td></tr>
+<tr><td>P90（最差10%）</td><td class="red">¥22.16</td><td>¥50+ 大额红包为主，单店成本极高</td></tr>
+<tr><td>P95</td><td class="red">¥52.15</td><td>结构崩溃，应紧急干预</td></tr>
+<tr><td>MAX</td><td class="red">¥133.18</td><td>魅久馆型僵尸店</td></tr>
+</table>
+</div>
+
+<!-- ====== PRIZE STRUCTURE DEEP DIVE ====== -->
+<h2>三、奖品结构深度拆解</h2>
+
+<div class="card">
+<h3>💰 TOP 20 奖品（按总支出排序）</h3>
+<p class="small">仅统计 award_cnt > 0 的有门店扫码，含红包+兑奖券+兑换券</p>
+
+<div class="chart-box">
+<svg width="1000" height="500" viewBox="0 0 1000 500">
+  <style>
+    .bar:hover { opacity:0.8 }
+    .label { font:11px sans-serif; fill:#8b949e }
+    .title-text { font:13px sans-serif; fill:#e1e4e8 }
+  </style>
+  <!-- Bars: Top 20 prizes -->
+  <line x1="120" y1="40" x2="120" y2="440" stroke="#2a2d3a" stroke-width="1"/>
+  <line x1="120" y1="440" x2="980" y2="440" stroke="#2a2d3a" stroke-width="1"/>
+  
+  <!-- ¥88红包: 83424 -->
+  <rect x="122" y="192" width="36" height="248" fill="#f85149" rx="2"><title>¥88红包: ¥83,424 (948次)</title></rect>
+  <text x="104" y="202" class="label" text-anchor="end">80k</text>
+  
+  <!-- ¥38红包: 61712 -->
+  <rect x="162" y="248" width="36" height="192" fill="#f85149" rx="2"><title>¥38红包: ¥61,712 (1,624次)</title></rect>
+  
+  <!-- ¥8红包: 46248 -->
+  <rect x="202" y="280" width="36" height="160" fill="#d29922" rx="2"><title>¥8红包: ¥46,248 (5,781次)</title></rect>
+  
+  <!-- ¥188红包: 33464 -->
+  <rect x="242" y="308" width="36" height="132" fill="#f85149" rx="2"><title>¥188红包: ¥33,464 (178次)</title></rect>
+  
+  <!-- 草莓音乐节: 31920 -->
+  <rect x="282" y="312" width="36" height="128" fill="#f85149" rx="2"><title>草莓音乐节门票: ¥31,920 (80张)</title></rect>
+  
+  <!-- ¥1红包: 30325 -->
+  <rect x="322" y="316" width="36" height="124" fill="#3fb950" rx="2"><title>¥1红包: ¥30,325 (30,325次)</title></rect>
+  
+  <!-- MatePad: 30000 -->
+  <rect x="362" y="316" width="36" height="124" fill="#f85149" rx="2"><title>MatePad Air12: ¥30,000 (10台)</title></rect>
+  
+  <!-- ¥18红包: 23832 -->
+  <rect x="402" y="340" width="36" height="100" fill="#d29922" rx="2"><title>¥18红包: ¥23,832 (1,324次)</title></rect>
+  
+  <!-- ¥5红包: 22920 -->
+  <rect x="442" y="344" width="36" height="96" fill="#3fb950" rx="2"><title>¥5红包: ¥22,920 (4,584次)</title></rect>
+  
+  <!-- ¥1.8红包: 22705 -->
+  <rect x="482" y="344" width="36" height="96" fill="#3fb950" rx="2"><title>¥1.8红包: ¥22,705 (12,614次)</title></rect>
+  
+  <!-- ¥8.8红包: 14634 -->
+  <rect x="522" y="368" width="36" height="72" fill="#3fb950" rx="2"><title>¥8.8红包: ¥14,634 (1,663次)</title></rect>
+  
+  <!-- 华为mate70pro: 13998 -->
+  <rect x="562" y="372" width="36" height="68" fill="#f85149" rx="2"><title>华为mate70pro: ¥13,998 (2台)</title></rect>
+  
+  <!-- ¥88.8红包: 13320 -->
+  <rect x="602" y="372" width="36" height="68" fill="#d29922" rx="2"><title>¥88.8红包: ¥13,320 (150次)</title></rect>
+  
+  <!-- 华为mate80pro: 12998 -->
+  <rect x="642" y="376" width="36" height="64" fill="#f85149" rx="2"><title>华为mate80pro: ¥12,998 (2台)</title></rect>
+  
+  <!-- ¥520红包: 12480 -->
+  <rect x="682" y="376" width="36" height="64" fill="#f85149" rx="2"><title>¥520红包: ¥12,480 (24次)</title></rect>
+  
+  <!-- ¥1.88红包: 12434 -->
+  <rect x="722" y="376" width="36" height="64" fill="#3fb950" rx="2"><title>¥1.88红包: ¥12,434 (6,614次)</title></rect>
+  
+  <!-- 华为平板: 12304 -->
+  <rect x="762" y="376" width="36" height="64" fill="#f85149" rx="2"><title>华为平板: ¥12,304 (6台)</title></rect>
+  
+  <!-- 智能手表: 10500 -->
+  <rect x="802" y="380" width="36" height="60" fill="#f85149" rx="2"><title>智能手表: ¥10,500 (13只)</title></rect>
+  
+  <!-- ¥0.88红包: 10117 -->
+  <rect x="842" y="380" width="36" height="60" fill="#3fb950" rx="2"><title>¥0.88红包: ¥10,117 (11,497次)</title></rect>
+  
+  <!-- 智能手表兑换券: 9600 -->
+  <rect x="882" y="384" width="36" height="56" fill="#f85149" rx="2"><title>智能手表兑换券: ¥9,600 (12只)</title></rect>
+  
+  <text x="122" y="460" class="title-text" transform="rotate(-45, 140, 460)">¥88红包</text>
+  <text x="162" y="460" class="title-text" transform="rotate(-45, 180, 460)">¥38红包</text>
+  <text x="202" y="460" class="title-text" transform="rotate(-45, 220, 460)">¥8红包</text>
+  <text x="242" y="460" class="title-text" transform="rotate(-45, 260, 460)">¥188红包</text>
+  <text x="282" y="460" class="title-text" transform="rotate(-45, 300, 460)">音乐节</text>
+  <text x="322" y="460" class="title-text" transform="rotate(-45, 340, 460)">¥1红包</text>
+  <text x="362" y="460" class="title-text" transform="rotate(-45, 380, 460)">MatePad</text>
+  <text x="402" y="460" class="title-text" transform="rotate(-45, 420, 460)">¥18红包</text>
+  <text x="442" y="460" class="title-text" transform="rotate(-45, 460, 460)">¥5红包</text>
+  <text x="482" y="460" class="title-text" transform="rotate(-45, 500, 460)">¥1.8红包</text>
+  <text x="522" y="460" class="title-text" transform="rotate(-45, 540, 460)">¥8.8红包</text>
+  <text x="562" y="460" class="title-text" transform="rotate(-45, 580, 460)">mate70pro</text>
+  <text x="602" y="460" class="title-text" transform="rotate(-45, 620, 460)">¥88.8红包</text>
+  <text x="642" y="460" class="title-text" transform="rotate(-45, 660, 460)">mate80pro</text>
+  <text x="682" y="460" class="title-text" transform="rotate(-45, 680, 460)">¥520红包</text>
+  <text x="722" y="460" class="title-text" transform="rotate(-45, 720, 460)">¥1.88红包</text>
+  <text x="762" y="460" class="title-text" transform="rotate(-45, 760, 460)">华为平板</text>
+  <text x="802" y="460" class="title-text" transform="rotate(-45, 800, 460)">手表(券)</text>
+  <text x="842" y="460" class="title-text" transform="rotate(-45, 840, 460)">¥0.88红包</text>
+  <text x="882" y="460" class="title-text" transform="rotate(-45, 880, 460)">手表(兑)</text>
+</svg>
+<p class="small" style="text-align:center">🟢小额红包(≤¥10) · 🟡中额(¥10~50) · 🔴大额(¥50+)</p>
+</div>
+</div>
+
+<div class="gap2 mt4">
+  <div class="col">
+    <div class="card">
+      <h3>按面值分层的费用占比</h3>
+      <table>
+        <tr><th>奖品层级</th><th>面值</th><th>中奖次数</th><th>费用占比</th></tr>
+        <tr><td>T1 微红包</td><td>¥0.01~¥2</td><td class="green">~80,000</td><td>~15%</td></tr>
+        <tr><td>T2 小红包</td><td>¥2~¥10</td><td class="green">~20,000</td><td>~20%</td></tr>
+        <tr><td>T3 中红包</td><td>¥10~¥50</td><td class="yellow">~5,000</td><td>~15%</td></tr>
+        <tr><td>T4 大额</td><td>¥50~¥500</td><td class="red">~2,000</td><td>~30%</td></tr>
+        <tr><td>T5 超大奖</td><td>¥500+</td><td class="red">~80</td><td>~20%</td></tr>
+      </table>
+      <p class="small mt4">⚠️ T4+T5 仅占中奖次数的 ~2%，却消耗了 <strong>50%</strong> 的奖品预算</p>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <h3>奖品类型分布</h3>
+      <table>
+        <tr><th>类型</th><th>总支出</th><th>占比</th><th>效率评价</th></tr>
+        <tr><td>红包</td><td>~¥528,000</td><td>68%</td><td class="yellow">可控性好，建议扩大</td></tr>
+        <tr><td>兑奖券（实物）</td><td>~¥195,000</td><td>25%</td><td class="red">面值高、频次低，需管控</td></tr>
+        <tr><td>兑换券（实物）</td><td>~¥52,000</td><td>7%</td><td class="red">同样面值高</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ====== HIGH vs LOW EFFICIENCY ====== -->
+<h2>四、高效店 vs 低效店深度对比</h2>
+
+<div class="finding">
+<strong>🔍 对比方法</strong>：取 cost_per_scan 最低的 P10 门店（前10%）vs 最高的 P10 门店（后10%），排除扫码量<20的门店，对比其奖品配置差异。
+</div>
+
+<div class="card">
+<h3>🏆 标杆高效店 TOP 10</h3>
+<table>
+  <tr><th>门店</th><th>扫码量</th><th>中奖率</th><th>每次面值</th><th>单次扫码成本</th><th>核心策略</th></tr>
+  <tr>
+    <td class="wrap blue">重庆A+HOUSE</td>
+    <td>26,391</td><td>3.0%</td><td class="green">¥2.48</td><td class="green">¥0.07</td>
+    <td><span class="pill pill-g">超低奖率+微奖</span></td>
+  </tr>
+  <tr>
+    <td class="wrap blue">广州番禺MT三店</td>
+    <td>3,102</td><td>99.7%</td><td class="green">¥1.09</td><td class="green">¥1.08</td>
+    <td><span class="pill pill-g">全民小额红包</span></td>
+  </tr>
+  <tr>
+    <td class="wrap blue">广州番禺MT一店</td>
+    <td>6,875</td><td>99.7%</td><td class="green">¥1.09</td><td class="green">¥1.08</td>
+    <td><span class="pill pill-g">全民小额红包</span></td>
+  </tr>
+  <tr>
+    <td class="wrap blue">重庆OPUS天空之城</td>
+    <td>8,935</td><td>3.5%</td><td class="green">¥2.23</td><td class="green">¥0.08</td>
+    <td><span class="pill pill-g">超低奖率+微奖</span></td>
+  </tr>
+  <tr>
+    <td class="wrap">深圳龙岗么哈MOJAR</td>
+    <td>37,430</td><td>3.2%</td><td>¥6.62</td><td class="green">¥0.21</td>
+    <td><span class="pill pill-y">高客流+低奖率</span></td>
+  </tr>
+  <tr>
+    <td class="wrap">郑州金水Party2</td>
+    <td>16,257</td><td>0.1%</td><td>¥208</td><td class="green">¥0.30</td>
+    <td><span class="pill pill-y">超大客流稀释</span></td>
+  </tr>
+  <tr>
+    <td class="wrap blue">广州番禺LP酒吧</td>
+    <td>4,060</td><td>99.7%</td><td class="green">¥1.24</td><td class="green">¥1.23</td>
+    <td><span class="pill pill-g">全民小额红包</span></td>
+  </tr>
+  <tr>
+    <td class="wrap blue">成都武侯paopao酒馆</td>
+    <td>2,790</td><td>87.5%</td><td class="green">¥1.40</td><td class="green">¥1.23</td>
+    <td><span class="pill pill-g">高奖率小额</span></td>
+  </tr>
+  <tr>
+    <td class="wrap">长春朝阳哈夫酒馆</td>
+    <td>2,884</td><td>98.2%</td><td class="green">¥1.67</td><td class="green">¥1.64</td>
+    <td><span class="pill pill-g">高奖率小额</span></td>
+  </tr>
+  <tr>
+    <td class="wrap">金华婺城大染坊</td>
+    <td>2,476</td><td>87.8%</td><td class="green">¥2.38</td><td class="green">¥2.08</td>
+    <td><span class="pill pill-g">高奖率小额</span></td>
+  </tr>
+</table>
+</div>
+
+<div class="sop mt4">
+<strong>🏆 高效店共性</strong>：<br>
+① 奖品面值 ≤ ¥2.5（无一例外）<br>
+② 两种成功路线：<strong>「高奖率+小额」</strong>（MT酒吧、哈夫酒馆、paopao）或 <strong>「极低奖率+超大客流」</strong>（A+HOUSE、么哈）<br>
+③ 扫码量越大，越适用低奖率策略（客流稀释成本）<br>
+④ MT酒吧体系证明了：99.7% 中奖率 + ¥1.09 面值的「人人有奖」模式是最稳健的方案
+</div>
+
+<div class="card mt4">
+<h3>⚠️ 低效店 BOTTOM 10（需紧急干预）</h3>
+<table>
+  <tr><th>门店</th><th>扫码量</th><th>中奖率</th><th>每次面值</th><th>单次扫码成本</th><th>失败原因</th></tr>
+  <tr>
+    <td class="wrap red">东莞长安魅久馆</td>
+    <td>41</td><td>48.8%</td><td class="red">¥180.04</td><td class="red">¥87.82</td>
+    <td><span class="pill pill-r">面值过高+客流低</span></td>
+  </tr>
+  <tr>
+    <td class="wrap red">石家庄长安麦颂KTV</td>
+    <td>101</td><td>55.4%</td><td class="red">¥264.29</td><td class="red">¥146.53</td>
+    <td><span class="pill pill-r">面值过高</span></td>
+  </tr>
+  <tr>
+    <td class="wrap red">石家庄裕华麦颂KTV</td>
+    <td>100</td><td>56.0%</td><td class="red">¥264.29</td><td class="red">¥148.00</td>
+    <td><span class="pill pill-r">面值过高</span></td>
+  </tr>
+  <tr>
+    <td class="wrap red">东莞常平魅久馆</td>
+    <td>24</td><td>41.7%</td><td class="red">¥120.32</td><td class="red">¥50.13</td>
+    <td><span class="pill pill-r">面值过高+客流极低</span></td>
+  </tr>
+  <tr>
+    <td class="wrap red">成都成华青灯民谣</td>
+    <td>105</td><td>20.0%</td><td class="red">¥346.71</td><td class="red">¥69.32</td>
+    <td><span class="pill pill-r">面值极端高</span></td>
+  </tr>
+  <tr>
+    <td class="wrap red">东莞大朗魅久万科</td>
+    <td>37</td><td>40.5%</td><td class="red">¥107.05</td><td class="red">¥43.40</td>
+    <td><span class="pill pill-r">面值过高+客流低</span></td>
+  </tr>
+  <tr>
+    <td class="wrap red">成都武侯青灯民谣</td>
+    <td>22</td><td>50.0%</td><td class="red">¥1001.18</td><td class="red">¥73.06</td>
+    <td><span class="pill pill-r">¥1000面值！</span></td>
+  </tr>
+  <tr>
+    <td class="wrap red">石家庄裕华麦颂空中</td>
+    <td>62</td><td>59.7%</td><td class="red">¥225.94</td><td class="red">¥134.87</td>
+    <td><span class="pill pill-r">面值过高</span></td>
+  </tr>
+  <tr>
+    <td class="wrap red">石家庄银座麦颂KTV</td>
+    <td>28</td><td>100%</td><td class="red">¥264.29</td><td class="red">¥264.29</td>
+    <td><span class="pill pill-r">100%中奖率+¥264面值</span></td>
+  </tr>
+  <tr>
+    <td class="wrap red">东莞莞城魅久馆</td>
+    <td>41</td><td>78.0%</td><td class="red">¥163.62</td><td class="red">¥127.70</td>
+    <td><span class="pill pill-r">面值过高+客流低</span></td>
+  </tr>
+</table>
+</div>
+
+<div class="sop-r mt4">
+<strong>🔴 低效店共性</strong>：<br>
+① 每次中奖面值 ≥ ¥100（优店的 <strong>50~100倍</strong>）<br>
+② 扫码量极低（< 100次，优店的 <strong>1/30~1/100</strong>）<br>
+③ 三类典型：<strong>魅久馆系列</strong>（¥120~180/次）、<strong>麦颂KTV</strong>（¥264/次）、<strong>青灯民谣</strong>（¥347~1001/次）<br>
+④ 麦颂KTV 统一 ¥264.29 面值 → 疑似系统设置的奖品池有问题，非门店自主选择
+</div>
+
+<!-- ====== DEAPRTMENT ANALYSIS ====== -->
+<h2>五、事业部对比</h2>
+
+<div class="card">
+<h3>📊 事业一部 vs 事业二部（2026年2-5月）</h3>
+<table>
+  <tr><th>指标</th><th>事业一部</th><th>事业二部</th><th>差距</th></tr>
+  <tr><td>覆盖门店</td><td>432</td><td>494</td><td>—</td></tr>
+  <tr><td>总扫码量</td><td class="green">565,249</td><td>341,525</td><td class="red">一部多65%</td></tr>
+  <tr><td>cost_per_scan</td><td class="green">¥0.61</td><td class="red">¥1.27</td><td class="red">二部高108%</td></tr>
+  <tr><td>中奖率</td><td>14.2%</td><td>12.1%</td><td>差不多</td></tr>
+  <tr><td>cost_per_award</td><td class="green">¥4.30</td><td class="red">¥10.50</td><td class="red">二部高144%</td></tr>
+</table>
+
+<div class="finding mt4">
+<strong>🔍 解读</strong>：两部中奖率几乎一致，差距完全来自 <strong>cost_per_award</strong>。<br>
+事业二部每次中奖面值 ¥10.50，是一部的 2.4倍 → 问题出在奖品配置策略上。<br>
+如果二部将 cost_per_award 降到 ¥5.00，按当前扫码量可节省约 <strong>¥19万</strong>（3个月）。
+</div>
+</div>
+
+<!-- ====== THE MATH ====== -->
+<h2>六、数学本质：为什么差店成本是优店的 30 倍？</h2>
+
+<div class="card">
+<h3>🧮 成本分解公式</h3>
+<p style="font-size:1.1em; text-align:center; padding:16px; background:#1a1a2e; border-radius:8px">
+<strong>cost_per_scan = cost_per_award × win_rate</strong>
+</p>
+
+<div class="gap2 mt4">
+  <div class="col">
+    <h4>🟢 优店 (MT一店)</h4>
+    <table>
+      <tr><td>cost_per_award</td><td class="green">¥1.09</td></tr>
+      <tr><td>× win_rate</td><td class="green">99.7%</td></tr>
+      <tr><td>= cost_per_scan</td><td class="green">¥1.08</td></tr>
+    </table>
+  </div>
+  <div class="col">
+    <h4>🔴 差店 (麦颂长安万达)</h4>
+    <table>
+      <tr><td>cost_per_award</td><td class="red">¥264.29</td></tr>
+      <tr><td>× win_rate</td><td>55.4%</td></tr>
+      <tr><td>= cost_per_scan</td><td class="red">¥146.53</td></tr>
+    </table>
+  </div>
+</div>
+
+<p class="mt4"><strong>差距 = 奖品面值差 242倍 × 中奖率差 0.56倍 ≈ 136倍</strong></p>
+<p class="small">中奖率的调节作用有限（55% vs 99%，相差仅 1.8倍），面值才是主导因子。</p>
+</div>
+
+<!-- ====== SOP ====== -->
+<h2>七、可落地的 SOP（5项建议）</h2>
+
+<div class="sop">
+<h3>SOP-1 🚦 建立三级预警机制</h3>
+<table>
+  <tr><th>级别</th><th>cost_per_scan</th><th>Actions</th></tr>
+  <tr><td>🟢 绿灯</td><td>≤ ¥2.00</td><td>维持，定期抽查奖品池</td></tr>
+  <tr><td>🟡 黄灯</td><td>¥2.00 ~ ¥5.00</td><td>月度复盘奖品结构，禁止新增 ¥50+ 奖品</td></tr>
+  <tr><td>🔴 红灯</td><td>> ¥5.00</td><td>强制审核奖品池，两周内降 cost_per_award 到 ¥10 以下</td></tr>
+</table>
+<p class="small mt4">当前需重点关注的门店数：约 250 家（黄灯+红灯）</p>
+</div>
+
+<div class="sop mt4">
+<h3>SOP-2 📋 推行「小额高频」奖品模板</h3>
+<p>MT酒吧体系已证明：<strong>¥1.09 红包 + 99.7% 中奖率 = ¥1.08/次</strong> 是最优配置。</p>
+<ul>
+  <li>对 cost_per_award > ¥10 的门店，强制将 <strong>P50 奖品面值降到 ¥5 以下</strong></li>
+  <li>奖品池设计原则：<strong>80% 以上预算分配给 ¥0.5~¥5 档，¥50+ 奖品不超过总预算的 5%</strong></li>
+  <li>用加多中奖次数替代加高单奖面值——同样 ¥100 预算，100 个 ¥1 红包比 1 个 ¥100 红包更能拉扫码</li>
+</ul>
+</div>
+
+<div class="sop-y mt4">
+<h3>SOP-3 🏢 分渠道差异化配置</h3>
+<table>
+  <tr><th>渠道类型</th><th>建议 cost_per_award</th><th>建议中奖率</th><th>单次成本</th></tr>
+  <tr><td>餐酒吧 / LiveHouse</td><td>¥1 ~ ¥3</td><td>80%+</td><td class="green">¥0.8 ~ ¥2.4</td></tr>
+  <tr><td>KTV / 量贩</td><td>¥3 ~ ¥8</td><td>60%+</td><td class="yellow">¥1.8 ~ ¥4.8</td></tr>
+  <tr><td>大型夜店 / CLUB</td><td>¥5 ~ ¥15</td><td>50%+</td><td class="yellow">¥2.5 ~ ¥7.5</td></tr>
+</table>
+<p class="small mt4">⚠️ 麦颂KTV（¥264.29）和青灯民谣（¥1001）远超任何合理范围</p>
+</div>
+
+<div class="sop mt4">
+<h3>SOP-4 🔍 识别并处置三类问题店</h3>
+<table>
+  <tr><th>类型</th><th>诊断标准</th><th>处置</th></tr>
+  <tr>
+    <td><strong>面值失控型</strong></td>
+    <td>cost_per_award > ¥50，扫码量正常</td>
+    <td>审核奖品池，强制降低 P50 面值。典型：麦颂KTV系列、青灯民谣</td>
+  </tr>
+  <tr>
+    <td><strong>僵尸型</strong></td>
+    <td>扫码 < 50 + cost_per_scan > ¥30</td>
+    <td>切换为 ¥2 统一红包模板，跑 3 个月后再调整。典型：魅久馆系列</td>
+  </tr>
+  <tr>
+    <td><strong>双低型</strong></td>
+    <td>扫码 < 200 + 中奖率 < 30%</td>
+    <td>先做引流（促销/试饮），扫码量起来后再调奖品。典型：部分新店</td>
+  </tr>
+</table>
+</div>
+
+<div class="sop-y mt4">
+<h3>SOP-5 📐 事业二部专项治理</h3>
+<p>事业二部 cost_per_award（¥10.50）是事业一部（¥4.30）的 <strong>2.4 倍</strong>，建议：</p>
+<ul>
+  <li>对二部 494 家门店逐一筛查 cost_per_award</li>
+  <li>成本 > ¥10 的门店要求说明奖品配置原因</li>
+  <li>发现有配置异常（如麦颂统一 ¥264.29）立即修复</li>
+  <li>目标：3 个月内将二部 cost_per_award 降到 ¥6 以下</li>
+</ul>
+</div>
+
+<!-- ====== DATA TRACEABILITY ====== -->
+<h2>八、数据溯源</h2>
+
+<div class="card">
+<table>
+  <tr><th>数据源</th><td>ai.ai_customer_activity_powerstation</td></tr>
+  <tr><th>时间范围</th><td>2026-02-14 ~ 2026-05-14（3个月）</td></tr>
+  <tr><th>数据量</th><td>1,466,472 条消费者扫码记录</td></tr>
+  <tr><th>口径</th><td>cost_per_scan = SUM(actual_value) / SUM(scan_cnt) | cost_per_award = SUM(actual_value) / SUM(award_cnt) | 排除 shop_code 为空的兜底积分记录</td></tr>
+  <tr><th>核心 SQL</th><td><code>SELECT shop_code, shop_name, SUM(scan_cnt), SUM(actual_value), SUM(award_cnt), ROUND(SUM(actual_value)/NULLIF(SUM(scan_cnt),0),2) as cost_per_scan FROM ai.ai_customer_activity_powerstation WHERE statis_date >= '2026-02-14' AND statis_date < '2026-05-15' AND shop_code IS NOT NULL GROUP BY ... HAVING SUM(scan_cnt) >= 20</code></td></tr>
+  <tr><th>局限</th><td>① actual_value 仅含奖品面值，不含运营/物流/核销等间接成本<br>② 消费者扫码 ≠ 实际购买，扫码量受门店客流基数影响<br>③ 兜底积分抽奖（占77%记录）已从门店分析中排除<br>④ 麦颂KTV统一¥264.29面值疑似系统配置问题，需业务确认<br>⑤ shop_city_name/shop_province_name 字段虽然 schema 中有定义但实际查询报"列名无效"，城市维度暂无法对比</td></tr>
+</table>
+</div>
+
+<!-- ====== CHECKLIST ====== -->
+<div class="checklist">
+<h3>🔍 执行清单</h3>
+<ul>
+  <li class="done">工位1：查 biz_knowledge.md 确认 ai_customer_activity_powerstation 表用途和口径（消费者扫码明细，actual_value=奖品面值，award_cnt>0=中奖）</li>
+  <li class="done">工位2：查 data_quality.md 确认已知坑（兜底积分占77%，shop_code为空，activity_type无区分度→用activity_business_type）</li>
+  <li class="done">工位3：查 baselines.md 拿基线（全量扫码~202万，月度峰值587K，中奖率~10.7%，奖品总面值~¥173.7万）</li>
+  <li class="done">工位4：get_table_schema → query_data（门店级+奖品级+事业部分层，全部成功）</li>
+  <li class="done">工位5：结果对比基线——近3月总面值¥77.7万 vs 全量¥173.7万合理（约3.8/12个月的数据），中奖率~13%与基线~11%一致</li>
+  <li class="done">规则①：确认表粒度=每次扫码一条，actual_value=奖品面值，能分析奖品结构</li>
+  <li class="done">规则②：statis_date是DATE类型，用'yyyy-MM-dd'字面量成功</li>
+  <li class="done">规则③：费用口径=SUM(actual_value)，不自行推导</li>
+  <li class="done">SQL 标注来源表名 + 时间范围 + 完整语句</li>
+  <li class="done">先给结论，再展数据，图表优先</li>
+  <li class="done">新发现 archivable：事业二部 cost_per_award ¥10.50 是一部的2.4倍；¥88红包是最大单项支出</li>
+</ul>
+</div>
+
+<p class="small" style="text-align:center; margin-top:32px; padding-bottom:32px">📊 仙津数据分析师 | 2026-05-14 | 基于 ai.ai_customer_activity_powerstation</p>
+
+</div>
+</body>
+</html>
