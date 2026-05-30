@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>东莞市欣宇商贸 ── 提货/开箱异常分析</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;padding:32px 40px}
+h1{font-size:22px;font-weight:600;margin-bottom:4px;color:#fff}
+.sub{font-size:13px;color:#888;margin-bottom:24px}
+.alert{background:#2d1f1f;border:1px solid #5c3a3a;border-radius:8px;padding:14px 18px;margin-bottom:20px;color:#ff9f9f;font-size:13px;line-height:1.6}
+.alert strong{color:#ff6b6b}
+.summary{display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+.card{flex:1;min-width:180px;background:#16213e;border-radius:10px;padding:18px 20px}
+.card .num{font-size:32px;font-weight:700;margin-bottom:2px}
+.card .lbl{font-size:12px;color:#888}
+.c-red{color:#ff6b6b}.c-amber{color:#ffa500}.c-cyan{color:#4ecdc4}.c-blue{color:#74b9ff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.panel{background:#16213e;border-radius:12px;padding:20px}
+.panel h2{font-size:15px;font-weight:600;color:#ccc;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #222}
+table{width:100%;border-collapse:collapse;font-size:12px;color:#ccc}
+th{text-align:left;padding:8px 6px;color:#888;font-weight:500;border-bottom:1px solid #333}
+td{padding:7px 6px;border-bottom:1px solid #1e293b;vertical-align:top}
+tr:hover td{background:#1a2535}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tag-red{background:#3a1f1f;color:#ff6b6b}
+.tag-amber{background:#3a3015;color:#ffa500}
+.tag-green{background:#1a3a1f;color:#4ecdc4}
+.chart-wrap{background:#16213e;border-radius:12px;padding:20px;margin-bottom:18px}
+</style>
+</head>
+<body>
+<h1>东莞市欣宇商贸有限公司 ── 提货/开箱异常分析</h1>
+<p class="sub">数据周期: 2025年10月 ~ 2026年4月 ｜ 共 28 家门店 ｜ 数据来源: 飞书表格</p>
+
+<div class="alert">
+<strong>⚠️ 核心发现</strong>：该经销商整体<strong>开箱率仅 61.5%</strong>，且存在<strong>开箱 > 提货</strong>的严重异常。<br>
+开箱不可能大于提货（除非上月库存未扫完延迟到本月扫），但<strong>摩羯酒吧 7个月中有5个月开箱>提货</strong>，且<strong>谢岗V.CLUB 7个月全开箱>提货</strong>。<br>
+另有<strong>12家门店、18个月份出现"提货为0但开箱>0"</strong>——这是业务员将其他门店销量上报挪用到该门店的<strong>典型信号</strong>。
+</div>
+
+<div class="summary">
+  <div class="card"><div class="num c-blue">36,271</div><div class="lbl">总提货（箱）</div></div>
+  <div class="card"><div class="num c-cyan">22,308</div><div class="lbl">总开箱（箱）</div></div>
+  <div class="card"><div class="num c-amber">61.5%</div><div class="lbl">整体开箱率</div></div>
+  <div class="card"><div class="num c-red">18</div><div class="lbl">异常月份数（开箱>提货）</div></div>
+  <div class="card"><div class="num c-red">+1,534</div><div class="lbl">开箱超提货总量（箱）</div></div>
+</div>
+
+<div class="chart-wrap"><div id="monthlyChart" style="width:100%;height:360px;"></div></div>
+
+<script>
+var mc = echarts.init(document.getElementById('monthlyChart'));
+mc.setOption({
+  title: { text: '月度提货 vs 开箱', textStyle: { color: '#ccc', fontSize: 14 }, left: 'center' },
+  tooltip: { trigger: 'axis', backgroundColor: 'rgba(22,33,62,0.95)', borderColor: '#333', textStyle: { color: '#e0e0e0' } },
+  legend: { data: ['提货', '开箱'], textStyle: { color: '#999' }, bottom: 0 },
+  grid: { left: 55, right: 30, top: 50, bottom: 35 },
+  xAxis: { type: 'category', data: ["10\u6708", "11\u6708", "12\u6708", "1\u6708", "2\u6708", "3\u6708", "4\u6708"], axisLabel: { color: '#999' }, axisLine: { lineStyle: { color: '#444' } } },
+  yAxis: { type: 'value', axisLabel: { color: '#999' }, splitLine: { lineStyle: { color: '#222', type: 'dashed' } } },
+  series: [
+    { name: '提货', type: 'bar', data: [5814, 6996, 5673, 2205, 0, 9414, 6169], barWidth: '30%', itemStyle: { color: '#4ecdc4', borderRadius: [4,4,0,0] } },
+    { name: '开箱', type: 'bar', data: [4114, 3483, 4152, 3099, 271, 3018, 4171], barWidth: '30%', itemStyle: { color: '#ff6b6b', borderRadius: [4,4,0,0] } },
+  ]
+});
+</script>
+
+<div class="panel">
+<h2>🔴 开箱 > 提货 的门店（物理上不可能，除非挪货）</h2>
+<table>
+<tr><th>门店</th><th>主任</th><th>提货</th><th>开箱</th><th>差值</th><th>开箱率</th><th>异常月</th></tr>
+<tr>
+<td><strong>东莞市长安镇东莞市长安镇摩羯酒吧</strong></td>
+<td>刘韬</td>
+<td style="text-align:right">6,237</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">7,317</td>
+<td style="text-align:right;color:#ff6b6b">+1,080</td>
+<td style="text-align:right">117.3%</td>
+<td><span class="tag tag-red">5个月</span></td>
+</tr><tr>
+<td><strong>东莞市谢岗镇V.CLUB</strong></td>
+<td>周健豪</td>
+<td style="text-align:right">840</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">1,294</td>
+<td style="text-align:right;color:#ff6b6b">+454</td>
+<td style="text-align:right">154.0%</td>
+<td><span class="tag tag-red">5个月</span></td>
+</tr><tr>
+<td><strong>深圳市宝安区夜巢酒吧</strong></td>
+<td>朱健锋</td>
+<td style="text-align:right">5</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">7</td>
+<td style="text-align:right;color:#ff6b6b">+2</td>
+<td style="text-align:right">140.0%</td>
+<td><span class="tag tag-red">2个月</span></td>
+</tr></table></div>
+<div style="height:18px"></div>
+<div class="panel">
+<h2>🔴 提货为0但开箱>0 ── 跨月挪货最大嫌疑</h2>
+<table>
+<tr><th>门店</th><th>主任</th><th>异常月份</th><th>开箱量</th><th>信号强度</th></tr>
+<tr>
+<td><strong>东莞市长安镇派缇酒吧</strong></td>
+<td>刘韬</td>
+<td>4月(1230)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">1,230 箱</td>
+<td><span class="tag tag-red">极高</span></td>
+</tr><tr>
+<td><strong>东莞市长安镇HOUSE酒吧</strong></td>
+<td>刘韬</td>
+<td>1月(325), 2月(9)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">334 箱</td>
+<td><span class="tag tag-red">极高</span></td>
+</tr><tr>
+<td><strong>东莞市谢岗镇V.CLUB</strong></td>
+<td>周健豪</td>
+<td>1月(159), 2月(166)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">325 箱</td>
+<td><span class="tag tag-red">极高</span></td>
+</tr><tr>
+<td><strong>东莞市清溪镇百尚酒吧</strong></td>
+<td>巫明智</td>
+<td>1月(247)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">247 箱</td>
+<td><span class="tag tag-red">极高</span></td>
+</tr><tr>
+<td><strong>东莞市虎门镇AEC酒吧</strong></td>
+<td>刘韬</td>
+<td>1月(136)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">136 箱</td>
+<td><span class="tag tag-amber">高</span></td>
+</tr><tr>
+<td><strong>东莞市长安镇龙猫酒吧</strong></td>
+<td>刘韬</td>
+<td>1月(81)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">81 箱</td>
+<td><span class="tag tag-amber">高</span></td>
+</tr><tr>
+<td><strong>深圳市龙岗区深圳市龙岗区新地酒吧</strong></td>
+<td>刘锦青</td>
+<td>1月(69)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">69 箱</td>
+<td><span class="tag tag-amber">高</span></td>
+</tr><tr>
+<td><strong>东莞市长安镇熊猫酒吧</strong></td>
+<td>刘韬</td>
+<td>2月(40)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">40 箱</td>
+<td><span class="tag tag-amber">中</span></td>
+</tr><tr>
+<td><strong>东莞市寮步镇蕾丝酒吧</strong></td>
+<td>邱佳杰</td>
+<td>2月(28)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">28 箱</td>
+<td><span class="tag tag-amber">中</span></td>
+</tr><tr>
+<td><strong>东莞市清溪镇灜酒吧</strong></td>
+<td>巫明智</td>
+<td>1月(28)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">28 箱</td>
+<td><span class="tag tag-amber">中</span></td>
+</tr><tr>
+<td><strong>东莞市长安镇东莞市长安镇空间壹号派对KTV</strong></td>
+<td>刘韬</td>
+<td>1月(1), 2月(21)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">22 箱</td>
+<td><span class="tag tag-amber">中</span></td>
+</tr><tr>
+<td><strong>东莞市虎门镇魅惑酒吧</strong></td>
+<td>邓小冰</td>
+<td>1月(7), 2月(4)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">11 箱</td>
+<td><span class="tag tag-amber">中</span></td>
+</tr><tr>
+<td><strong>深圳市宝安区夜巢酒吧</strong></td>
+<td>朱健锋</td>
+<td>11月(6), 12月(1)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">7 箱</td>
+<td><span class="tag tag-amber">中</span></td>
+</tr><tr>
+<td><strong>东莞市石排镇上尚酒吧</strong></td>
+<td>邱佳杰</td>
+<td>2月(3)</td>
+<td style="text-align:right;color:#ff6b6b;font-weight:700">3 箱</td>
+<td><span class="tag tag-amber">中</span></td>
+</tr></table></div>
+<div style="height:18px"></div>
+<div class="panel">
+<h2>🟡 整体开箱率 < 30% 的门店（提货未动销）</h2>
+<table>
+<tr><th>门店</th><th>主任</th><th>提货</th><th>开箱</th><th>开箱率</th></tr>
+<tr>
+<td>东莞市黄江镇熊猫酒吧</td>
+<td>刘韬</td>
+<td style="text-align:right">3,200</td>
+<td style="text-align:right">569</td>
+<td style="text-align:right;color:#ffa500;font-weight:700">17.8%</td>
+</tr><tr>
+<td>东莞市虎门镇AEC酒吧</td>
+<td>刘韬</td>
+<td style="text-align:right">2,375</td>
+<td style="text-align:right">699</td>
+<td style="text-align:right;color:#ffa500;font-weight:700">29.4%</td>
+</tr><tr>
+<td>深圳市龙岗区深圳市龙岗区新地酒吧</td>
+<td>刘锦青</td>
+<td style="text-align:right">2,005</td>
+<td style="text-align:right">444</td>
+<td style="text-align:right;color:#ffa500;font-weight:700">22.1%</td>
+</tr><tr>
+<td>东莞市虎门镇东莞市虎门镇1号基地酒吧</td>
+<td>刘韬</td>
+<td style="text-align:right">1,500</td>
+<td style="text-align:right">5</td>
+<td style="text-align:right;color:#ffa500;font-weight:700">0.3%</td>
+</tr><tr>
+<td>东莞市长安镇派缇CLUB</td>
+<td>刘韬</td>
+<td style="text-align:right">1,000</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right;color:#ffa500;font-weight:700">0.0%</td>
+</tr><tr>
+<td>东莞市石排镇上尚酒吧</td>
+<td>邱佳杰</td>
+<td style="text-align:right">739</td>
+<td style="text-align:right">156</td>
+<td style="text-align:right;color:#ffa500;font-weight:700">21.1%</td>
+</tr><tr>
+<td>东莞市虎门镇威美酒吧</td>
+<td>张启良</td>
+<td style="text-align:right">550</td>
+<td style="text-align:right">100</td>
+<td style="text-align:right;color:#ffa500;font-weight:700">18.2%</td>
+</tr><tr>
+<td>东莞市虎门镇AEC酒吧-连锁</td>
+<td>邓小冰</td>
+<td style="text-align:right">200</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right;color:#ffa500;font-weight:700">0.0%</td>
+</tr><tr>
+<td>东莞市虎门镇魅惑酒吧</td>
+<td>邓小冰</td>
+<td style="text-align:right">200</td>
+<td style="text-align:right">51</td>
+<td style="text-align:right;color:#ffa500;font-weight:700">25.5%</td>
+</tr><tr>
+<td>东莞市寮步镇DD酒吧</td>
+<td>邱佳杰</td>
+<td style="text-align:right">150</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right;color:#ffa500;font-weight:700">0.0%</td>
+</tr></table></div>
+<div style="height:18px"></div>
+<div class="panel">
+<h2>📊 各门店月度提货/开箱热力图</h2>
+<table>
+<tr><th>门店</th><th>10月</th><th>11月</th><th>12月</th><th>1月</th><th>2月</th><th>3月</th><th>4月</th><th>开箱率</th></tr>
+<tr><td><strong>东莞市长安镇东莞市长安镇摩羯酒吧</strong><br><span style="color:#888;font-size:11px">刘韬</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">1000<br><span style="font-size:9px">→1268</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">1100<br><span style="font-size:9px">→1107</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">1000<br><span style="font-size:9px">→1444</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">700<br><span style="font-size:9px">→1274</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#4ecdc4">1500<br><span style="font-size:9px">76%</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">937<br><span style="font-size:9px">→1089</span></td><td style="text-align:right;font-weight:700;color:#4ecdc4">117.3%</td></tr><tr><td><strong>东莞市长安镇熊猫酒吧</strong><br><span style="color:#888;font-size:11px">刘韬</span></td><td style="text-align:center;color:#4ecdc4">1000<br><span style="font-size:9px">81%</span></td><td style="text-align:center;color:#ffa500">1266<br><span style="font-size:9px">61%</span></td><td style="text-align:center;color:#4ecdc4">800<br><span style="font-size:9px">84%</span></td><td style="text-align:center;color:#ffa500">700<br><span style="font-size:9px">63%</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">40<br><span style="font-size:9px">0→40</span></td><td style="text-align:center;color:#ffa500">1300<br><span style="font-size:9px">43%</span></td><td style="text-align:center;color:#4ecdc4">800<br><span style="font-size:9px">80%</span></td><td style="text-align:right;font-weight:700;color:#ffa500">66.9%</td></tr><tr><td><strong>东莞市黄江镇熊猫酒吧</strong><br><span style="color:#888;font-size:11px">刘韬</span></td><td style="text-align:center;color:#ffa500">500<br><span style="font-size:9px">44%</span></td><td style="text-align:center;color:#ff6b6b">500<br><span style="font-size:9px">23%</span></td><td style="text-align:center;color:#ff6b6b">500<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#ff6b6b">500<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">800<br><span style="font-size:9px">13%</span></td><td style="text-align:center;color:#ffa500">400<br><span style="font-size:9px">31%</span></td><td style="text-align:right;font-weight:700;color:#ff6b6b">17.8%</td></tr><tr><td><strong>东莞市长安镇龙猫酒吧</strong><br><span style="color:#888;font-size:11px">刘韬</span></td><td style="text-align:center;color:#4ecdc4">704<br><span style="font-size:9px">80%</span></td><td style="text-align:center;color:#4ecdc4">500<br><span style="font-size:9px">75%</span></td><td style="text-align:center;color:#4ecdc4">400<br><span style="font-size:9px">79%</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">81<br><span style="font-size:9px">0→81</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">903<br><span style="font-size:9px">16%</span></td><td style="text-align:center;color:#ff6b6b">400<br><span style="font-size:9px">16%</span></td><td style="text-align:right;font-weight:700;color:#ffa500">53.0%</td></tr><tr><td><strong>东莞市清溪镇百尚酒吧</strong><br><span style="color:#888;font-size:11px">巫明智</span></td><td style="text-align:center;color:#ffa500">560<br><span style="font-size:9px">54%</span></td><td style="text-align:center;color:#ffa500">500<br><span style="font-size:9px">66%</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">370<br><span style="font-size:9px">→461</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">247<br><span style="font-size:9px">0→247</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ffa500">570<br><span style="font-size:9px">53%</span></td><td style="text-align:center;color:#4ecdc4">472<br><span style="font-size:9px">94%</span></td><td style="text-align:right;font-weight:700;color:#4ecdc4">84.6%</td></tr><tr><td><strong>东莞市虎门镇AEC酒吧</strong><br><span style="color:#888;font-size:11px">刘韬</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">400<br><span style="font-size:9px">27%</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">200<br><span style="font-size:9px">→226</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">136<br><span style="font-size:9px">0→136</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">1345<br><span style="font-size:9px">17%</span></td><td style="text-align:center;color:#ff6b6b">430<br><span style="font-size:9px">0%</span></td><td style="text-align:right;font-weight:700;color:#ff6b6b">29.4%</td></tr><tr><td><strong>深圳市龙岗区深圳市龙岗区新地酒吧</strong><br><span style="color:#888;font-size:11px">刘锦青</span></td><td style="text-align:center;color:#ff6b6b">500<br><span style="font-size:9px">18%</span></td><td style="text-align:center;color:#ff6b6b">500<br><span style="font-size:9px">14%</span></td><td style="text-align:center;color:#ff6b6b">500<br><span style="font-size:9px">18%</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">69<br><span style="font-size:9px">0→69</span></td><td style="text-align:center;color:#444">-</td><td style="background:#3a3015;color:#ffa500;text-align:center">5<br><span style="font-size:9px">→57</span></td><td style="text-align:center;color:#ff6b6b">500<br><span style="font-size:9px">14%</span></td><td style="text-align:right;font-weight:700;color:#ff6b6b">22.1%</td></tr><tr><td><strong>东莞市寮步镇蕾丝酒吧</strong><br><span style="color:#888;font-size:11px">邱佳杰</span></td><td style="text-align:center;color:#4ecdc4">200<br><span style="font-size:9px">94%</span></td><td style="text-align:center;color:#ffa500">300<br><span style="font-size:9px">60%</span></td><td style="text-align:center;color:#ffa500">250<br><span style="font-size:9px">63%</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">205<br><span style="font-size:9px">→283</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">28<br><span style="font-size:9px">0→28</span></td><td style="text-align:center;color:#ff6b6b">370<br><span style="font-size:9px">1%</span></td><td style="text-align:center;color:#ff6b6b">450<br><span style="font-size:9px">0%</span></td><td style="text-align:right;font-weight:700;color:#ffa500">47.4%</td></tr><tr><td><strong>东莞市长安镇HOUSE酒吧</strong><br><span style="color:#888;font-size:11px">刘韬</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ffa500">400<br><span style="font-size:9px">57%</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">325<br><span style="font-size:9px">0→325</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">9<br><span style="font-size:9px">0→9</span></td><td style="text-align:center;color:#ff6b6b">1000<br><span style="font-size:9px">24%</span></td><td style="text-align:center;color:#ffa500">300<br><span style="font-size:9px">59%</span></td><td style="text-align:right;font-weight:700;color:#ffa500">57.3%</td></tr><tr><td><strong>东莞市虎门镇东莞市虎门镇1号基地酒吧</strong><br><span style="color:#888;font-size:11px">刘韬</span></td><td style="text-align:center;color:#ff6b6b">500<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#ff6b6b">600<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#ff6b6b">400<br><span style="font-size:9px">1%</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:right;font-weight:700;color:#ff6b6b">0.3%</td></tr><tr><td><strong>东莞市清溪镇灜酒吧</strong><br><span style="color:#888;font-size:11px">巫明智</span></td><td style="text-align:center;color:#4ecdc4">300<br><span style="font-size:9px">85%</span></td><td style="text-align:center;color:#ffa500">450<br><span style="font-size:9px">38%</span></td><td style="text-align:center;color:#ffa500">250<br><span style="font-size:9px">58%</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">28<br><span style="font-size:9px">0→28</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">300<br><span style="font-size:9px">15%</span></td><td style="text-align:center;color:#ff6b6b">50<br><span style="font-size:9px">8%</span></td><td style="text-align:right;font-weight:700;color:#ffa500">47.9%</td></tr><tr><td><strong>东莞市长安镇派缇CLUB</strong><br><span style="color:#888;font-size:11px">刘韬</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">1000<br><span style="font-size:9px">0%</span></td><td style="text-align:right;font-weight:700;color:#ff6b6b">0.0%</td></tr><tr><td><strong>深圳市宝安区东宫酒吧</strong><br><span style="color:#888;font-size:11px">朱健锋</span></td><td style="text-align:center;color:#ff6b6b">300<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#ff6b6b">100<br><span style="font-size:9px">0%</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">70<br><span style="font-size:9px">→185</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ffa500">300<br><span style="font-size:9px">39%</span></td><td style="text-align:center;color:#ff6b6b">100<br><span style="font-size:9px">0%</span></td><td style="text-align:right;font-weight:700;color:#ffa500">34.9%</td></tr><tr><td><strong>东莞市谢岗镇V.CLUB</strong><br><span style="color:#888;font-size:11px">周健豪</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">100<br><span style="font-size:9px">→260</span></td><td style="text-align:center;color:#ffa500">300<br><span style="font-size:9px">63%</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">50<br><span style="font-size:9px">→160</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">159<br><span style="font-size:9px">0→159</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">166<br><span style="font-size:9px">0→166</span></td><td style="text-align:center;color:#ff6b6b">340<br><span style="font-size:9px">17%</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">50<br><span style="font-size:9px">→300</span></td><td style="text-align:right;font-weight:700;color:#4ecdc4">154.0%</td></tr><tr><td><strong>东莞市石排镇上尚酒吧</strong><br><span style="color:#888;font-size:11px">邱佳杰</span></td><td style="text-align:center;color:#ffa500">50<br><span style="font-size:9px">42%</span></td><td style="text-align:center;color:#ff6b6b">230<br><span style="font-size:9px">22%</span></td><td style="text-align:center;color:#ffa500">53<br><span style="font-size:9px">36%</span></td><td style="text-align:center;color:#ffa500">100<br><span style="font-size:9px">47%</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">3<br><span style="font-size:9px">0→3</span></td><td style="text-align:center;color:#ff6b6b">206<br><span style="font-size:9px">8%</span></td><td style="text-align:center;color:#ff6b6b">100<br><span style="font-size:9px">0%</span></td><td style="text-align:right;font-weight:700;color:#ff6b6b">21.1%</td></tr><tr><td><strong>东莞市虎门镇威美酒吧</strong><br><span style="color:#888;font-size:11px">张启良</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">50<br><span style="font-size:9px">→100</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">200<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">200<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#ff6b6b">100<br><span style="font-size:9px">0%</span></td><td style="text-align:right;font-weight:700;color:#ff6b6b">18.2%</td></tr><tr><td><strong>东莞市长安镇东莞市长安镇空间壹号派对KTV</strong><br><span style="color:#888;font-size:11px">刘韬</span></td><td style="text-align:center;color:#ffa500">40<br><span style="font-size:9px">50%</span></td><td style="text-align:center;color:#ff6b6b">100<br><span style="font-size:9px">7%</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">20<br><span style="font-size:9px">→37</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">1<br><span style="font-size:9px">0→1</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">21<br><span style="font-size:9px">0→21</span></td><td style="text-align:center;color:#ff6b6b">150<br><span style="font-size:9px">6%</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">10<br><span style="font-size:9px">→15</span></td><td style="text-align:right;font-weight:700;color:#ffa500">34.4%</td></tr><tr><td><strong>东莞市虎门镇AEC酒吧-连锁</strong><br><span style="color:#888;font-size:11px">邓小冰</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">200<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:right;font-weight:700;color:#ff6b6b">0.0%</td></tr><tr><td><strong>东莞市虎门镇魅惑酒吧</strong><br><span style="color:#888;font-size:11px">邓小冰</span></td><td style="background:#3a3015;color:#ffa500;text-align:center">10<br><span style="font-size:9px">→12</span></td><td style="text-align:center;color:#ff6b6b">150<br><span style="font-size:9px">3%</span></td><td style="text-align:center;color:#4ecdc4">10<br><span style="font-size:9px">100%</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">7<br><span style="font-size:9px">0→7</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">4<br><span style="font-size:9px">0→4</span></td><td style="text-align:center;color:#ff6b6b">10<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#ffa500">20<br><span style="font-size:9px">70%</span></td><td style="text-align:right;font-weight:700;color:#ff6b6b">25.5%</td></tr><tr><td><strong>东莞市寮步镇DD酒吧</strong><br><span style="color:#888;font-size:11px">邱佳杰</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">100<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#ff6b6b">50<br><span style="font-size:9px">0%</span></td><td style="text-align:right;font-weight:700;color:#ff6b6b">0.0%</td></tr><tr><td><strong>深圳市宝安区潘多拉酒吧</strong><br><span style="color:#888;font-size:11px">朱健锋</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">5<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:right;font-weight:700;color:#ff6b6b">0.0%</td></tr><tr><td><strong>深圳市宝安区超级空间酒吧</strong><br><span style="color:#888;font-size:11px">朱健锋</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">5<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:right;font-weight:700;color:#ff6b6b">0.0%</td></tr><tr><td><strong>深圳市宝安区夜巢酒吧</strong><br><span style="color:#888;font-size:11px">朱健锋</span></td><td style="text-align:center;color:#444">-</td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">6<br><span style="font-size:9px">0→6</span></td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">1<br><span style="font-size:9px">0→1</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#ff6b6b">5<br><span style="font-size:9px">0%</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:right;font-weight:700;color:#4ecdc4">140.0%</td></tr><tr><td><strong>东莞市长安镇派缇酒吧</strong><br><span style="color:#888;font-size:11px">刘韬</span></td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="text-align:center;color:#444">-</td><td style="background:#3a1f1f;color:#ff6b6b;font-weight:700;text-align:center">1230<br><span style="font-size:9px">0→1230</span></td><td style="text-align:right;font-weight:700;color:#ff6b6b">0.0%</td></tr></table></div>
+<div style="height:18px"></div>
+<div class="alert">
+<strong>📌 分析建议</strong><br>
+1. <strong>摩羯酒吧</strong>和<strong>谢岗V.CLUB</strong>开箱持续大于提货，需核查是否存在将其他门店销量集中到该店上报的情况。<br>
+2. <strong>12家门店18个月份"提货0但开箱>0"</strong>是典型的跨月挪货信号——上月提的货本月才开箱扫码，但系统已将销量计入其他门店。<br>
+3. <strong>1号基地酒吧</strong>（开箱率0.3%）、<strong>派缇CLUB</strong>（0%）、<strong>DD酒吧</strong>（0%）大量提货但未开箱，存在"虚假提货"或"压货"嫌疑。<br>
+4. 建议核查<strong>刘韬</strong>主任管辖门店（摩羯、熊猫、龙猫、HOUSE、AEC、1号基地等），异常集中度最高。
+</div>
+</body></html>
