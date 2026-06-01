@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仙津饮料销售趋势分析</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;padding:32px 40px}
+h1{font-size:22px;font-weight:600;margin-bottom:4px;color:#fff}
+.sub{font-size:13px;color:#888;margin-bottom:24px}
+.alert{background:#2d1f1f;border:1px solid #5c3a3a;border-radius:8px;padding:14px 18px;margin-bottom:20px;color:#ff9f9f;font-size:13px;line-height:1.6}
+.alert strong{color:#ff6b6b}
+.summary{display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+.card{flex:1;min-width:160px;background:#16213e;border-radius:10px;padding:18px 20px}
+.card .num{font-size:28px;font-weight:700;margin-bottom:2px}
+.card .lbl{font-size:12px;color:#888}
+.c-red{color:#ff6b6b}.c-amber{color:#ffa500}.c-cyan{color:#4ecdc4}.c-blue{color:#74b9ff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.panel{background:#16213e;border-radius:12px;padding:20px}
+.panel h2{font-size:15px;font-weight:600;color:#ccc;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #222}
+table{width:100%;border-collapse:collapse;font-size:12px;color:#ccc}
+th{text-align:left;padding:8px 6px;color:#888;font-weight:500;border-bottom:1px solid #333}
+td{padding:7px 6px;border-bottom:1px solid #1e293b;vertical-align:top}
+tr:hover td{background:#1a2535}
+</style>
+</head>
+<body>
+<h1>仙津饮料 ── 销售趋势分析</h1>
+<p class="sub">数据源 ai_salesman_sales ｜ 2023-01 ~ 2026-05 ｜ 日级汇总</p>
+
+<div class="alert">
+<strong>⚠️ 核心发现</strong>：2026年1-5月销售额同比<strong>下滑 36.1%</strong>（销量下滑 23.5%），销售额降幅远大于销量降幅，说明<strong>均价也在下跌</strong>。<br>
+但 4月已转正（+0.9%），3月接近持平（-6.9%），<strong>Q2初现企稳迹象</strong>，但5月再次下滑 32.1%。
+</div>
+
+<div class="summary">
+  <div class="card"><div class="num c-blue">4,704,094</div><div class="lbl">2026年1-5月销量（箱）</div></div>
+  <div class="card"><div class="num c-cyan">16,680.7万</div><div class="lbl">2026年1-5月销售额</div></div>
+  <div class="card"><div class="num c-red">-23.5%</div><div class="lbl">销量同比</div></div>
+  <div class="card"><div class="num c-red">-36.1%</div><div class="lbl">销售额同比</div></div>
+</div>
+
+<div class="panel">
+<h2>月度销量趋势（最近18个月）</h2>
+<div id="monthlyChart" style="width:100%;height:380px;"></div>
+</div>
+
+<div class="row">
+<div class="panel">
+<h2>📈 向好方向</h2>
+<table>
+<tr><th>维度</th><th>指标</th><th>变化</th></tr>
+<tr><td>月度趋势</td><td>4月销量</td><td style="color:#4ecdc4;font-weight:700">↑ +0.9%（转正）</td></tr>
+<tr><td>月度趋势</td><td>3月销量</td><td style="color:#4ecdc4">↑ 接近持平（-6.9%）</td></tr>
+<tr><td>办事处</td><td>黑龙江办事处</td><td style="color:#4ecdc4;font-weight:700">↑ +60.0%</td></tr>
+<tr><td>办事处</td><td>惠河梅区</td><td style="color:#4ecdc4;font-weight:700">↑ +58.4%</td></tr>
+<tr><td>办事处</td><td>粤东办事处</td><td style="color:#4ecdc4">↑ +32.2%</td></tr>
+<tr><td>办事处</td><td>广西区</td><td style="color:#4ecdc4">↑ +29.1%</td></tr>
+<tr><td>产品</td><td>2.8街舞系列</td><td style="color:#4ecdc4">↑ +28.7%</td></tr>
+<tr><td>产品</td><td>ET集团联名款</td><td style="color:#4ecdc4">↑ +30.4%</td></tr>
+<tr><td>产品</td><td>轻盈系列</td><td style="color:#4ecdc4">↑ +10.2%</td></tr>
+<tr><td>渠道</td><td>特通/团购</td><td style="color:#4ecdc4;font-weight:700">↑ +113.6%</td></tr>
+</table>
+</div>
+
+<div class="panel">
+<h2>📉 向差方向</h2>
+<table>
+<tr><th>维度</th><th>指标</th><th>变化</th></tr>
+<tr><td>整体</td><td>销售额同比降幅</td><td style="color:#ff6b6b;font-weight:700">↓ -36.1%（超销量降幅）</td></tr>
+<tr><td>月度</td><td>1月销量</td><td style="color:#ff6b6b;font-weight:700">↓ -48.9%</td></tr>
+<tr><td>月度</td><td>5月销量</td><td style="color:#ff6b6b;font-weight:700">↓ -32.1%</td></tr>
+<tr><td>事业部</td><td>饮料事业二部</td><td style="color:#ff6b6b">↓ -37.3%</td></tr>
+<tr><td>事业部</td><td>饮料事业一部</td><td style="color:#ff6b6b">↓ -29.3%</td></tr>
+<tr><td>办事处</td><td>深圳特区</td><td style="color:#ff6b6b;font-weight:700">↓ -100%</td></tr>
+<tr><td>办事处</td><td>深圳东区</td><td style="color:#ff6b6b;font-weight:700">↓ -98.1%</td></tr>
+<tr><td>办事处</td><td>东莞东区</td><td style="color:#ff6b6b;font-weight:700">↓ -135.4%（负增长）</td></tr>
+<tr><td>产品</td><td>回瓶系列</td><td style="color:#ff6b6b">↓ -64.3%</td></tr>
+<tr><td>产品</td><td>248系列</td><td style="color:#ff6b6b">↓ -60.5%</td></tr>
+<tr><td>产品</td><td>W系列</td><td style="color:#ff6b6b">↓ -61.2%</td></tr>
+</table>
+</div>
+</div>
+
+<div class="panel">
+<h2>年度对比</h2>
+<table>
+<tr><th>年份</th><th>销量（箱）</th><th>销售额（万元）</th><th>日均销量</th></tr>
+<tr><td><strong>2026年</strong></td><td style="text-align:right">4,704,094</td><td style="text-align:right">16,680.7</td><td style="text-align:right">31,152</td></tr>
+<tr><td><strong>2025年</strong></td><td style="text-align:right">15,667,522</td><td style="text-align:right">61,601.3</td><td style="text-align:right">42,924</td></tr>
+<tr><td><strong>2024年</strong></td><td style="text-align:right">15,218,318</td><td style="text-align:right">62,427.9</td><td style="text-align:right">41,694</td></tr>
+<tr><td><strong>2023年</strong></td><td style="text-align:right">15,902,965</td><td style="text-align:right">76,142.6</td><td style="text-align:right">43,569</td></tr>
+</table>
+<p style="color:#888;font-size:12px;margin-top:10px">注：2026年仅1-5月数据，日均按151天计算</p>
+</div>
+
+<script>
+var months = ["2024-12", "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05"];
+var cntData = [822022, 1246960, 910154, 1261518, 1305261, 1423696, 1420953, 1297773, 1394081, 1400001, 1233189, 1138317, 1635619, 637269, 608675, 1175014, 1316683, 966453];
+var amtData = [3609.8, 5976.9, 3728.5, 5024.8, 5311.7, 6081.1, 5136.4, 4215.0, 5045.2, 5142.6, 4222.2, 4518.0, 7198.8, 2953.5, 2159.2, 3772.2, 4373.5, 3422.2];
+
+var mc = echarts.init(document.getElementById('monthlyChart'));
+mc.setOption({
+  tooltip: { trigger: 'axis', backgroundColor: 'rgba(22,33,62,0.95)', borderColor: '#333', textStyle: { color: '#e0e0e0' } },
+  legend: { data: ['销量(箱)', '销售额(万元)'], textStyle: { color: '#999' }, bottom: 0 },
+  grid: { left: 60, right: 60, top: 20, bottom: 35 },
+  xAxis: { type: 'category', data: months, axisLabel: { color: '#999', fontSize: 11 }, axisLine: { lineStyle: { color: '#444' } } },
+  yAxis: [
+    { type: 'value', name: '销量(箱)', nameTextStyle: { color: '#888' }, axisLabel: { color: '#999' }, splitLine: { lineStyle: { color: '#222', type: 'dashed' } } },
+    { type: 'value', name: '销售额(万)', nameTextStyle: { color: '#888' }, axisLabel: { color: '#999' }, splitLine: { show: false } }
+  ],
+  series: [
+    { name: '销量(箱)', type: 'bar', data: cntData, barWidth: '40%', itemStyle: { color: '#4ecdc4', borderRadius: [4,4,0,0] } },
+    { name: '销售额(万元)', type: 'line', yAxisIndex: 1, data: amtData, smooth: true, lineStyle: { color: '#ff6b6b', width: 2 }, itemStyle: { color: '#ff6b6b' }, symbol: 'circle', symbolSize: 6 }
+  ]
+});
+window.addEventListener('resize', function(){ mc.resize(); });
+</script>
+</body></html>
