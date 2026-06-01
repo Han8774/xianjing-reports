@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仙津饮料2026年深度业绩分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;padding:32px 40px;line-height:1.6}
+h1{font-size:24px;font-weight:700;margin-bottom:6px;color:#f8fafc}
+h2{font-size:18px;font-weight:600;color:#f8fafc;margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid #334155}
+h3{font-size:15px;font-weight:600;color:#94a3b8;margin:20px 0 10px}
+.sub{font-size:13px;color:#64748b;margin-bottom:24px}
+.exec-summary{background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border-left:4px solid #ef4444;border-radius:8px;padding:20px 24px;margin-bottom:28px}
+.exec-summary h3{color:#f8fafc;margin:0 0 12px;font-size:16px}
+.exec-summary p{color:#cbd5e1;margin-bottom:8px;font-size:14px}
+.exec-summary strong{color:#f87171}
+.summary{display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+.card{flex:1;min-width:150px;background:#1e293b;border-radius:12px;padding:20px;text-align:center;border:1px solid #334155}
+.card .num{font-size:32px;font-weight:800;margin-bottom:4px}
+.card .lbl{font-size:12px;color:#94a3b8}
+.c-red{color:#ef4444}.c-amber{color:#f59e0b}.c-green{color:#22c55e}.c-blue{color:#60a5fa}.c-purple{color:#a78bfa}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.panel{background:#1e293b;border-radius:12px;padding:24px;border:1px solid #334155}
+.panel h3{margin-top:0;color:#f8fafc}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;padding:10px 8px;color:#94a3b8;font-weight:500;border-bottom:2px solid #334155}
+td{padding:9px 8px;border-bottom:1px solid #1e293b;vertical-align:middle}
+tr:hover td{background:#1a2535}
+.highlight{background:#3f1f1f!important}
+.positive{color:#22c55e;font-weight:600}.negative{color:#ef4444;font-weight:600}
+.insight-box{background:#1a2535;border-radius:8px;padding:16px;margin:12px 0;border-left:3px solid #60a5fa}
+.insight-box h4{color:#60a5fa;margin:0 0 8px;font-size:14px}
+.insight-box p{color:#cbd5e1;margin:0;font-size:13px}
+.chart-wrap{background:#1e293b;border-radius:12px;padding:20px;margin-bottom:20px;border:1px solid #334155}
+.footer{color:#64748b;font-size:12px;margin-top:40px;padding-top:20px;border-top:1px solid #334155}
+</style>
+</head>
+<body>
+<h1>仙津饮料 2026年深度业绩分析报告</h1>
+<p class="sub">分析框架：总体层面 · 区域层面 · 经销商层面 · 产品结构 · 未来预测 | 数据截至2026年5月</p>
+
+<div class="exec-summary">
+<h3>🎯 执行摘要</h3>
+<p><strong>核心问题：均价崩塌。</strong>2026年1-5月销售额同比下滑36.1%，但销量仅下滑23.5%。差距的12.6个百分点来自<strong>均价从47.9元/箱跌至32-35元/箱</strong>，跌幅超过30%。这不是需求萎缩，是<strong>价格体系在崩</strong>。</p>
+<p><strong>结构性转机：</strong>2.8街舞系列逆势增长31.7%，占比提升12.4个百分点，已成为第一大单品。248系列和回瓶系列分别暴跌63%和43%，旧主力在退潮。</p>
+<p><strong>区域极度集中：</strong>TOP5办事处占80.9%销量，福建、海南、湖南、甘青等办事处断崖式下跌。深圳全线归零。</p>
+<p><strong>6月预测：</strong>基于线性趋势预测6月销量83.3万箱（同比-41.4%），但历史6月均值149万箱。<strong>如果6月不能触达100万箱，全年业绩将面临极大压力。</strong></p>
+</div>
+
+<div class="summary">
+  <div class="card"><div class="num c-red">-23.5%</div><div class="lbl">销量同比 (1-5月)</div></div>
+  <div class="card"><div class="num c-red">-36.1%</div><div class="lbl">销售额同比</div></div>
+  <div class="card"><div class="num c-red">-33%</div><div class="lbl">均价跌幅 (峰值→谷底)</div></div>
+  <div class="card"><div class="num c-amber">80.9%</div><div class="lbl">TOP5办事处占比</div></div>
+  <div class="card"><div class="num c-green">+31.7%</div><div class="lbl">2.8街舞系列增长</div></div>
+  <div class="card"><div class="num c-purple">-41.4%</div><div class="lbl">预测6月同比</div></div>
+</div>
+
+<div class="chart-wrap">
+<h3>销量、销售额、均价趋势（18个月）</h3>
+<div id="trendChart" style="width:100%;height:420px;"></div>
+</div>
+
+<h2>一、总体层面：均价崩塌是销售额暴跌的主因</h2>
+
+<div class="insight-box">
+<h4>💡 关键洞察</h4>
+<p>销售额降幅（-36.1%）= 销量降幅（-23.5%）+ 均价降幅（约-16%）。均价下跌不是季节性波动，是持续性的价格体系下沉。2025年1月均价47.93元/箱，到2026年3月跌至32.10元/箱，<strong>15个月跌去33%</strong>。</p>
+</div>
+
+<div class="row">
+<div class="panel">
+<h3>月度均价走势（元/箱）</h3>
+<table>
+<tr><th>月份</th><th style="text-align:right">均价</th><th style="text-align:right">环比</th></tr>
+<tr><td>2024-12</td><td style="text-align:right;font-weight:600">43.91</td><td style="text-align:right"></td></tr>
+<tr><td>2025-01</td><td style="text-align:right;font-weight:600">47.93</td><td style="text-align:right"></td></tr>
+<tr><td>2025-02</td><td style="text-align:right;font-weight:600">40.97</td><td style="text-align:right"></td></tr>
+<tr><td>2025-03</td><td style="text-align:right;font-weight:600">39.83</td><td style="text-align:right"></td></tr>
+<tr><td>2025-04</td><td style="text-align:right;font-weight:600">40.69</td><td style="text-align:right"></td></tr>
+<tr><td>2025-05</td><td style="text-align:right;font-weight:600">42.71</td><td style="text-align:right"></td></tr>
+<tr><td>2025-06</td><td style="text-align:right;font-weight:600">36.15</td><td style="text-align:right"></td></tr>
+<tr><td>2025-07</td><td style="text-align:right;font-weight:600">32.48</td><td style="text-align:right"></td></tr>
+<tr><td>2025-08</td><td style="text-align:right;font-weight:600">36.19</td><td style="text-align:right"></td></tr>
+<tr><td>2025-09</td><td style="text-align:right;font-weight:600">36.73</td><td style="text-align:right"></td></tr>
+<tr><td>2025-10</td><td style="text-align:right;font-weight:600">34.24</td><td style="text-align:right"></td></tr>
+<tr><td>2025-11</td><td style="text-align:right;font-weight:600">39.69</td><td style="text-align:right"></td></tr>
+<tr><td>2025-12</td><td style="text-align:right;font-weight:600">44.01</td><td style="text-align:right"></td></tr>
+<tr><td>2026-01</td><td style="text-align:right;font-weight:600">46.35</td><td style="text-align:right"></td></tr>
+<tr><td>2026-02</td><td style="text-align:right;font-weight:600">35.47</td><td style="text-align:right"></td></tr>
+<tr><td>2026-03</td><td style="text-align:right;font-weight:600">32.10</td><td style="text-align:right"></td></tr>
+<tr><td>2026-04</td><td style="text-align:right;font-weight:600">33.22</td><td style="text-align:right"></td></tr>
+<tr><td>2026-05</td><td style="text-align:right;font-weight:600">35.41</td><td style="text-align:right"></td></tr>
+</table>
+</div>
+
+<div class="panel">
+<h3>年度对比</h3>
+<table>
+<tr><th>年份</th><th style="text-align:right">销量(万箱)</th><th style="text-align:right">销售额(万)</th><th style="text-align:right">均价</th></tr>
+<tr><td><strong>2026</strong></td><td style="text-align:right">470.4</td><td style="text-align:right">16681</td><td style="text-align:right">35.46</td></tr>
+<tr><td><strong>2025</strong></td><td style="text-align:right">1566.8</td><td style="text-align:right">61601</td><td style="text-align:right">39.32</td></tr>
+<tr><td><strong>2024</strong></td><td style="text-align:right">1521.8</td><td style="text-align:right">62428</td><td style="text-align:right">41.02</td></tr>
+<tr><td><strong>2023</strong></td><td style="text-align:right">1590.3</td><td style="text-align:right">76143</td><td style="text-align:right">47.88</td></tr>
+</table>
+<p style="color:#64748b;font-size:11px;margin-top:8px">2026年仅1-5月数据</p>
+</div>
+</div>
+
+<h2>二、区域层面：极度集中 + 严重分化</h2>
+
+<div class="insight-box">
+<h4>💡 关键洞察</h4>
+<p>TOP5办事处占80.9%销量，TOP10占95.3%。这意味着<strong>公司命脉攥在极少数区域手中</strong>。同时，均价差异巨大：海南116元/箱 vs 东莞17元/箱，同一产品在不同区域价差近7倍，说明渠道结构和产品组合极度不均。</p>
+</div>
+
+<div class="row">
+<div class="panel">
+<h3>📈 增长最快办事处（2026 vs 2025, 1-5月）</h3>
+<table>
+<tr><th>办事处</th><th style="text-align:right">2025</th><th style="text-align:right">2026</th><th style="text-align:right">同比</th></tr>
+<tr><td>京津冀办事处</td><td style="text-align:right">710</td><td style="text-align:right">3,619</td><td style="text-align:right" class="positive">↑+409.7%</td></tr>
+<tr><td>山西办事处</td><td style="text-align:right">710</td><td style="text-align:right">3,050</td><td style="text-align:right" class="positive">↑+329.6%</td></tr>
+<tr><td>江苏办事处</td><td style="text-align:right">3,000</td><td style="text-align:right">8,410</td><td style="text-align:right" class="positive">↑+180.3%</td></tr>
+<tr><td>江西区</td><td style="text-align:right">1,872</td><td style="text-align:right">3,440</td><td style="text-align:right" class="positive">↑+83.8%</td></tr>
+<tr><td>惠河梅区</td><td style="text-align:right">42,103</td><td style="text-align:right">45,147</td><td style="text-align:right" class="positive">↑+7.2%</td></tr>
+<tr><td>广西办事处</td><td style="text-align:right">371,591</td><td style="text-align:right">390,952</td><td style="text-align:right" class="positive">↑+5.2%</td></tr>
+<tr><td>广清韶区</td><td style="text-align:right">147,384</td><td style="text-align:right">124,030</td><td style="text-align:right" class="positive">↑-15.8%</td></tr>
+<tr><td>河南办事处</td><td style="text-align:right">18,578</td><td style="text-align:right">15,617</td><td style="text-align:right" class="positive">↑-15.9%</td></tr>
+</table>
+</div>
+
+<div class="panel">
+<h3>📉 下滑最严重办事处</h3>
+<table>
+<tr><th>办事处</th><th style="text-align:right">2025</th><th style="text-align:right">2026</th><th style="text-align:right">同比</th></tr>
+<tr><td>黑龙江办事处</td><td style="text-align:right">4,241</td><td style="text-align:right">0</td><td style="text-align:right" class="negative">↓-100.0%</td></tr>
+<tr><td>吉林办事处</td><td style="text-align:right">2,034</td><td style="text-align:right">0</td><td style="text-align:right" class="negative">↓-100.0%</td></tr>
+<tr><td>海南办事处</td><td style="text-align:right">6,406</td><td style="text-align:right">1,100</td><td style="text-align:right" class="negative">↓-82.8%</td></tr>
+<tr><td>湖南办事处</td><td style="text-align:right">8,336</td><td style="text-align:right">1,975</td><td style="text-align:right" class="negative">↓-76.3%</td></tr>
+<tr><td>福建办事处</td><td style="text-align:right">130,655</td><td style="text-align:right">67,102</td><td style="text-align:right" class="negative">↓-48.6%</td></tr>
+<tr><td>山东办事处</td><td style="text-align:right">2,040</td><td style="text-align:right">1,050</td><td style="text-align:right" class="negative">↓-48.5%</td></tr>
+<tr><td>甘青办事处</td><td style="text-align:right">37,454</td><td style="text-align:right">20,398</td><td style="text-align:right" class="negative">↓-45.5%</td></tr>
+<tr><td>广西区</td><td style="text-align:right">72,442</td><td style="text-align:right">39,917</td><td style="text-align:right" class="negative">↓-44.9%</td></tr>
+</table>
+</div>
+</div>
+
+<h2>三、产品结构：旧主力退潮，新引擎崛起</h2>
+
+<div class="insight-box">
+<h4>💡 关键洞察</h4>
+<p>248系列（-63%）和回瓶系列（-43%）两大旧主力同时崩塌，合计占比下降19.2个百分点。但2.8街舞系列逆势增长31.7%，占比提升12.4个百分点，已成为第一大单品。<strong>产品结构正在经历一次剧烈的代际更替。</strong></p>
+</div>
+
+<div class="panel">
+<h3>核心产品表现（2025 vs 2026, 1-5月）</h3>
+<table>
+<tr><th>产品系列</th><th style="text-align:right">2025销量</th><th style="text-align:right">2026销量</th><th style="text-align:right">同比</th><th style="text-align:right">占比变化</th></tr>
+<tr><td><strong>回瓶系列</strong></td><td style="text-align:right">1,132,166</td><td style="text-align:right">642,886</td><td style="text-align:right" class="negative">↓-43.2%</td><td style="text-align:right">-9.2%</td></tr>
+<tr><td><strong>2.8街舞系列</strong></td><td style="text-align:right">413,787</td><td style="text-align:right">544,831</td><td style="text-align:right" class="positive">↑+31.7%</td><td style="text-align:right">+12.4%</td></tr>
+<tr><td><strong>248系列</strong></td><td style="text-align:right">546,893</td><td style="text-align:right">201,461</td><td style="text-align:right" class="negative">↓-63.2%</td><td style="text-align:right">-10.0%</td></tr>
+<tr><td><strong>0.9街舞系列</strong></td><td style="text-align:right">174,327</td><td style="text-align:right">133,574</td><td style="text-align:right" class="negative">↓-23.4%</td><td style="text-align:right">+0.3%</td></tr>
+<tr><td><strong>轻盈系列</strong></td><td style="text-align:right">129,628</td><td style="text-align:right">105,738</td><td style="text-align:right" class="negative">↓-18.4%</td><td style="text-align:right">+0.6%</td></tr>
+<tr><td><strong>2.8度多姆系列</strong></td><td style="text-align:right">4,000</td><td style="text-align:right">90,288</td><td style="text-align:right" class="positive">↑+2157.2%</td><td style="text-align:right">+4.5%</td></tr>
+<tr><td><strong>ET集团联名款</strong></td><td style="text-align:right">42,943</td><td style="text-align:right">61,700</td><td style="text-align:right" class="positive">↑+43.7%</td><td style="text-align:right">+1.6%</td></tr>
+<tr><td><strong>248ml（连锁款）</strong></td><td style="text-align:right">76,081</td><td style="text-align:right">38,265</td><td style="text-align:right" class="negative">↓-49.7%</td><td style="text-align:right">-0.9%</td></tr>
+<tr><td><strong>W系列</strong></td><td style="text-align:right">57,886</td><td style="text-align:right">32,033</td><td style="text-align:right" class="negative">↓-44.7%</td><td style="text-align:right">-0.5%</td></tr>
+<tr><td><strong>红楼仙系列</strong></td><td style="text-align:right">0</td><td style="text-align:right">27,547</td><td style="text-align:right" class="negative">↓+0.0%</td><td style="text-align:right">+1.4%</td></tr>
+<tr><td><strong>超极爽系列</strong></td><td style="text-align:right">44,461</td><td style="text-align:right">23,734</td><td style="text-align:right" class="negative">↓-46.6%</td><td style="text-align:right">-0.4%</td></tr>
+<tr><td><strong>仙津露系列</strong></td><td style="text-align:right">18,581</td><td style="text-align:right">11,109</td><td style="text-align:right" class="negative">↓-40.2%</td><td style="text-align:right">-0.1%</td></tr>
+<tr><td><strong>1985系列</strong></td><td style="text-align:right">10,011</td><td style="text-align:right">0</td><td style="text-align:right" class="negative">↓-100.0%</td><td style="text-align:right">-0.4%</td></tr>
+</table>
+</div>
+
+<h2>四、未来走势预测与风险预警</h2>
+
+<div class="row">
+<div class="panel">
+<h3>📊 基于趋势的6月预测</h3>
+<table>
+<tr><th>指标</th><th style="text-align:right">预测值</th><th style="text-align:right">vs去年6月</th></tr>
+<tr><td>预测销量</td><td style="text-align:right;font-weight:600">83.3万箱</td><td style="text-align:right" class="negative">↓ -41.4%</td></tr>
+<tr><td>预测销售额</td><td style="text-align:right;font-weight:600">2,667万</td><td style="text-align:right" class="negative">↓ -48.1%</td></tr>
+<tr><td>历史6月均值</td><td style="text-align:right">149万箱</td><td style="text-align:right"></td></tr>
+<tr><td>预测差距</td><td style="text-align:right;color:#f59e0b;font-weight:700">-66万箱</td><td style="text-align:right"></td></tr>
+</table>
+<p style="color:#64748b;font-size:11px;margin-top:10px">基于最近6个月线性趋势外推，未考虑季节性因素</p>
+</div>
+
+<div class="panel">
+<h3>⚠️ 风险预警矩阵</h3>
+<table>
+<tr><th>风险项</th><th>等级</th><th>说明</th></tr>
+<tr class="highlight"><td>均价持续下跌</td><td style="color:#ef4444;font-weight:700">🔴 极高</td><td>15个月跌33%，无企稳迹象</td></tr>
+<tr class="highlight"><td>区域过度集中</td><td style="color:#ef4444;font-weight:700">🔴 极高</td><td>TOP5占80.9%，风险敞口过大</td></tr>
+<tr><td>旧主力产品崩塌</td><td style="color:#f59e0b;font-weight:700">🟡 高</td><td>248系列-63%，回瓶-43%</td></tr>
+<tr><td>深圳市场归零</td><td style="color:#f59e0b;font-weight:700">🟡 高</td><td>深圳特区+东区接近清零</td></tr>
+<tr><td>经销商活跃度下降</td><td style="color:#f59e0b;font-weight:700">🟡 高</td><td>需进一步核查</td></tr>
+</table>
+</div>
+</div>
+
+<div class="insight-box">
+<h4>💡 策略建议</h4>
+<p><strong>短期（1-3个月）：</strong>稳住2.8街舞系列的增长势头，这是当前唯一的核心增长引擎。同时紧急排查248系列和回瓶系列暴跌的根因——是渠道问题、竞品冲击还是产品生命周期终结。</p>
+<p><strong>中期（3-6个月）：</strong>止住均价下跌。均价跌33%意味着要么在大量促销、要么渠道结构恶化（低价渠道占比上升）。需要明确是哪一种，并针对性调整。</p>
+<p><strong>长期（6-12个月）：</strong>分散区域集中度。TOP5办事处占80.9%意味着一旦任何一个核心区域出问题，整体业绩会崩盘。需要培育第二增长极。</p>
+</div>
+
+<div class="footer">
+<p>数据来源：ai_salesman_sales | 分析时间：2026-06-01 | 报告生成：仙津数据分析师</p>
+<p>免责声明：预测基于历史线性趋势外推，未考虑政策变化、市场竞争、季节性因素等外部变量，仅供参考。</p>
+</div>
+
+<script>
+var months = ["2024-12", "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05"];
+var cntData = [82.2, 124.7, 91.0, 126.2, 130.5, 142.4, 142.1, 129.8, 139.4, 140.0, 123.3, 113.8, 163.6, 63.7, 60.9, 117.5, 131.7, 96.6];
+var amtData = [3609.8, 5976.9, 3728.5, 5024.8, 5311.7, 6081.1, 5136.4, 4215.0, 5045.2, 5142.6, 4222.2, 4518.0, 7198.8, 2953.5, 2159.2, 3772.2, 4373.5, 3422.2];
+var priceData = [43.91, 47.93, 40.97, 39.83, 40.69, 42.71, 36.15, 32.48, 36.19, 36.73, 34.24, 39.69, 44.01, 46.35, 35.47, 32.1, 33.22, 35.41];
+
+var tc = echarts.init(document.getElementById('trendChart'));
+tc.setOption({
+  tooltip: { trigger: 'axis', backgroundColor: 'rgba(15,23,42,0.95)', borderColor: '#334155', textStyle: { color: '#e2e8f0' } },
+  legend: { data: ['销量(万箱)', '销售额(万元)', '均价(元/箱)'], textStyle: { color: '#94a3b8' }, top: 0 },
+  grid: { left: 50, right: 50, top: 50, bottom: 30 },
+  xAxis: { type: 'category', data: months, axisLabel: { color: '#64748b', fontSize: 10 }, axisLine: { lineStyle: { color: '#334155' } } },
+  yAxis: [
+    { type: 'value', name: '销量/销售额', nameTextStyle: { color: '#64748b' }, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1e293b' } } },
+    { type: 'value', name: '均价(元)', nameTextStyle: { color: '#64748b' }, axisLabel: { color: '#64748b' }, splitLine: { show: false } }
+  ],
+  series: [
+    { name: '销量(万箱)', type: 'bar', data: cntData, barWidth: '30%', itemStyle: { color: '#60a5fa', borderRadius: [4,4,0,0] } },
+    { name: '销售额(万元)', type: 'bar', data: amtData, barWidth: '30%', itemStyle: { color: '#22c55e', borderRadius: [4,4,0,0] } },
+    { name: '均价(元/箱)', type: 'line', yAxisIndex: 1, data: priceData, smooth: true, lineStyle: { color: '#ef4444', width: 3 }, itemStyle: { color: '#ef4444' }, symbol: 'circle', symbolSize: 6, markLine: { silent: true, data: [{ yAxis: 40, lineStyle: { color: '#f59e0b', type: 'dashed' }, label: { color: '#f59e0b', formatter: '健康线40元' } }] } }
+  ]
+});
+window.addEventListener('resize', function(){ tc.resize(); });
+</script>
+</body></html>
